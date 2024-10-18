@@ -19,8 +19,6 @@ import {PoolKey} from "../src/types/PoolKey.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolId} from "../src/types/PoolId.sol";
 import {LPFeeLibrary} from "../src/libraries/LPFeeLibrary.sol";
-import {ProtocolFeeControllerTest} from "../src/test/ProtocolFeeControllerTest.sol";
-import {IProtocolFeeController} from "../src/interfaces/IProtocolFeeController.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 

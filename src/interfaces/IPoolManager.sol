@@ -55,7 +55,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @param tickSpacing The minimum number of ticks between initialized ticks
     /// @param hooks The hooks contract address for the pool, or address(0) if none
     /// @param sqrtPriceX96 The price of the pool on initialization
-    /// @param tick The initial tick of the pool corresponding to the intialized price
+    /// @param tick The initial tick of the pool corresponding to the initialized price
     event Initialize(
         PoolId indexed id,
         Currency indexed currency0,

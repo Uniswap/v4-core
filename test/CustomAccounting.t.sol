@@ -254,7 +254,7 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
                     "manager balance change exact input"
                 );
 
-                // exact output, where there isnt enough output reserves available to pay swap and hook
+                // exact output, where there isn't enough output reserves available to pay swap and hook
             } else if (!isExactIn && (hookDeltaSpecified + amountSpecified > maxPossibleOut_fuzz_test)) {
                 // the hook will have taken hookDeltaSpecified of the maxPossibleOut
                 assertEq(deltaSpecified, maxPossibleOut_fuzz_test - hookDeltaSpecified, "deltaSpecified exact output");

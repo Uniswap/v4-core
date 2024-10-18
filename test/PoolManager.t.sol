@@ -6,7 +6,6 @@ import {IHooks} from "../src/interfaces/IHooks.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
-import {IProtocolFeeController} from "../src/interfaces/IProtocolFeeController.sol";
 import {PoolManager} from "../src/PoolManager.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {Pool} from "../src/libraries/Pool.sol";
@@ -775,7 +774,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
         assertEq(slot0ProtocolFee, 0);
 
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         manager.setProtocolFee(key, protocolFee);
 
         (,, slot0ProtocolFee,) = manager.getSlot0(key.toId());
@@ -990,7 +989,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
         assertEq(slot0ProtocolFee, 0);
 
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         manager.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
         (,, slot0ProtocolFee,) = manager.getSlot0(key.toId());
@@ -1006,7 +1005,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(currency0), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
         assertEq(currency0.balanceOf(address(1)), 0);
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         manager.collectProtocolFees(address(1), currency0, expectedFees);
         snapLastCall("erc20 collect protocol fees");
         assertEq(currency0.balanceOf(address(1)), expectedFees);
@@ -1019,7 +1018,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
         assertEq(slot0ProtocolFee, 0);
 
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         manager.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
         (,, slot0ProtocolFee,) = manager.getSlot0(key.toId());
@@ -1035,7 +1034,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(currency0), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
         assertEq(currency0.balanceOf(address(1)), 0);
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         manager.collectProtocolFees(address(1), currency0, expectedFees);
         assertEq(currency0.balanceOf(address(1)), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency0), 0);
@@ -1047,7 +1046,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
         assertEq(slot0ProtocolFee, 0);
 
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         manager.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
         (,, slot0ProtocolFee,) = manager.getSlot0(key.toId());
@@ -1063,7 +1062,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(currency0), 0);
         assertEq(manager.protocolFeesAccrued(currency1), expectedFees);
         assertEq(currency1.balanceOf(address(1)), 0);
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         manager.collectProtocolFees(address(1), currency1, 0);
         assertEq(currency1.balanceOf(address(1)), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
@@ -1076,7 +1075,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         (,, uint24 slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
         assertEq(slot0ProtocolFee, 0);
 
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         manager.setProtocolFee(nativeKey, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
         (,, slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
@@ -1092,7 +1091,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(nativeCurrency), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
         assertEq(nativeCurrency.balanceOf(address(1)), 0);
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         manager.collectProtocolFees(address(1), nativeCurrency, expectedFees);
         snapLastCall("native collect protocol fees");
         assertEq(nativeCurrency.balanceOf(address(1)), expectedFees);
@@ -1106,7 +1105,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         (,, uint24 slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
         assertEq(slot0ProtocolFee, 0);
 
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         manager.setProtocolFee(nativeKey, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
         (,, slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
@@ -1122,7 +1121,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(nativeCurrency), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
         assertEq(nativeCurrency.balanceOf(address(1)), 0);
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         manager.collectProtocolFees(address(1), nativeCurrency, 0);
         assertEq(nativeCurrency.balanceOf(address(1)), expectedFees);
         assertEq(manager.protocolFeesAccrued(nativeCurrency), 0);

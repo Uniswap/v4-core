@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
+import "forge-std/Test.sol";
 import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {Hooks} from "../../src/libraries/Hooks.sol";
 import {Currency, CurrencyLibrary} from "../../src/types/Currency.sol";
@@ -25,9 +26,8 @@ import {PoolClaimsTest} from "../../src/test/PoolClaimsTest.sol";
 import {ActionsRouter} from "../../src/test/ActionsRouter.sol";
 import {LiquidityAmounts} from "../../test/utils/LiquidityAmounts.sol";
 import {StateLibrary} from "../../src/libraries/StateLibrary.sol";
-import {ProtocolFeeControllerTest} from "../../src/test/ProtocolFeeControllerTest.sol";
 
-contract Deployers {
+contract Deployers is Test {
     using LPFeeLibrary for uint24;
     using StateLibrary for IPoolManager;
 
@@ -63,7 +63,7 @@ contract Deployers {
 
     PoolClaimsTest claimsRouter;
     PoolNestedActionsTest nestedActionRouter;
-    ProtocolFeeControllerTest feeController;
+    address feeController;
 
     PoolKey key;
     PoolKey nativeKey;
@@ -88,7 +88,7 @@ contract Deployers {
         takeRouter = new PoolTakeTest(manager);
         claimsRouter = new PoolClaimsTest(manager);
         nestedActionRouter = new PoolNestedActionsTest(manager);
-        feeController = new ProtocolFeeControllerTest();
+        feeController = makeAddr("feeController");
         actionsRouter = new ActionsRouter(manager);
 
         manager.setProtocolFeeController(feeController);
