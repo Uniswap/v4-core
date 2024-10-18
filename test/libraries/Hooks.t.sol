@@ -44,7 +44,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function test_initialize_succeedsWithHook() public {
-        manager.initialize(uninitializedKey, SQRT_PRICE_1_1, new bytes(123));
+        manager.initialize(uninitializedKey, SQRT_PRICE_1_1);
 
         (uint160 sqrtPriceX96,,,) = manager.getSlot0(uninitializedKey.toId());
         assertEq(sqrtPriceX96, SQRT_PRICE_1_1);
@@ -55,13 +55,13 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     function test_beforeInitialize_invalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, bytes4(0xdeadbeef));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.initialize(uninitializedKey, SQRT_PRICE_1_1, ZERO_BYTES);
+        manager.initialize(uninitializedKey, SQRT_PRICE_1_1);
     }
 
     function test_afterInitialize_invalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterInitialize.selector, bytes4(0xdeadbeef));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.initialize(uninitializedKey, SQRT_PRICE_1_1, ZERO_BYTES);
+        manager.initialize(uninitializedKey, SQRT_PRICE_1_1);
     }
 
     function test_beforeAfterAddLiquidity_beforeAfterRemoveLiquidity_succeedsWithHook() public {
@@ -1002,7 +1002,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         BaseTestHooks revertingHook = BaseTestHooks(beforeSwapFlag);
 
         PoolKey memory key = PoolKey(currency0, currency1, 0, 60, IHooks(revertingHook));
-        manager.initialize(key, SQRT_PRICE_1_1, new bytes(0));
+        manager.initialize(key, SQRT_PRICE_1_1);
 
         IPoolManager.SwapParams memory swapParams =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
@@ -1030,7 +1030,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         EmptyRevertContract revertingHook = EmptyRevertContract(beforeSwapFlag);
 
         PoolKey memory key = PoolKey(currency0, currency1, 0, 60, IHooks(address(revertingHook)));
-        manager.initialize(key, SQRT_PRICE_1_1, new bytes(0));
+        manager.initialize(key, SQRT_PRICE_1_1);
 
         IPoolManager.SwapParams memory swapParams =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_PRICE_1_2});

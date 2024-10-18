@@ -19,11 +19,7 @@ contract DynamicFeesTestHook is BaseTestHooks {
         fee = _fee;
     }
 
-    function afterInitialize(address, PoolKey calldata key, uint160, int24, bytes calldata)
-        external
-        override
-        returns (bytes4)
-    {
+    function afterInitialize(address, PoolKey calldata key, uint160, int24) external override returns (bytes4) {
         manager.updateDynamicLPFee(key, fee);
         return IHooks.afterInitialize.selector;
     }

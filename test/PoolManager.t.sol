@@ -180,7 +180,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         MockContract(mockAddr).setImplementation(hookAddr);
 
-        (key,) = initPool(currency0, currency1, IHooks(mockAddr), 3000, sqrtPriceX96, ZERO_BYTES);
+        (key,) = initPool(currency0, currency1, IHooks(mockAddr), 3000, sqrtPriceX96);
 
         BalanceDelta balanceDelta = modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
 
@@ -215,7 +215,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         MockContract(mockAddr).setImplementation(hookAddr);
 
-        (key,) = initPool(currency0, currency1, IHooks(mockAddr), 3000, sqrtPriceX96, ZERO_BYTES);
+        (key,) = initPool(currency0, currency1, IHooks(mockAddr), 3000, sqrtPriceX96);
         modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
         BalanceDelta balanceDelta = modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
 
@@ -244,7 +244,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         vm.etch(hookAddr, address(impl).code);
         MockHooks mockHooks = MockHooks(hookAddr);
 
-        (key,) = initPool(currency0, currency1, mockHooks, 100, SQRT_PRICE_1_1, ZERO_BYTES);
+        (key,) = initPool(currency0, currency1, mockHooks, 100, SQRT_PRICE_1_1);
 
         mockHooks.setReturnValue(mockHooks.beforeAddLiquidity.selector, bytes4(0xdeadbeef));
         mockHooks.setReturnValue(mockHooks.afterAddLiquidity.selector, bytes4(0xdeadbeef));
@@ -266,7 +266,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         vm.etch(hookAddr, address(impl).code);
         MockHooks mockHooks = MockHooks(hookAddr);
 
-        (key,) = initPool(currency0, currency1, mockHooks, 100, SQRT_PRICE_1_1, ZERO_BYTES);
+        (key,) = initPool(currency0, currency1, mockHooks, 100, SQRT_PRICE_1_1);
         modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
 
         mockHooks.setReturnValue(mockHooks.beforeRemoveLiquidity.selector, bytes4(0xdeadbeef));
@@ -289,7 +289,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         vm.etch(hookAddr, address(impl).code);
         MockHooks mockHooks = MockHooks(hookAddr);
 
-        (key,) = initPool(currency0, currency1, mockHooks, 100, SQRT_PRICE_1_1, ZERO_BYTES);
+        (key,) = initPool(currency0, currency1, mockHooks, 100, SQRT_PRICE_1_1);
 
         mockHooks.setReturnValue(mockHooks.beforeAddLiquidity.selector, mockHooks.beforeAddLiquidity.selector);
         mockHooks.setReturnValue(mockHooks.afterAddLiquidity.selector, mockHooks.afterAddLiquidity.selector);
@@ -314,7 +314,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         vm.etch(hookAddr, address(impl).code);
         MockHooks mockHooks = MockHooks(hookAddr);
 
-        (key,) = initPool(currency0, currency1, mockHooks, 100, SQRT_PRICE_1_1, ZERO_BYTES);
+        (key,) = initPool(currency0, currency1, mockHooks, 100, SQRT_PRICE_1_1);
         modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
 
         mockHooks.setReturnValue(mockHooks.beforeRemoveLiquidity.selector, mockHooks.beforeRemoveLiquidity.selector);
@@ -450,7 +450,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         vm.etch(allHooksAddr, address(impl).code);
         MockHooks mockHooks = MockHooks(allHooksAddr);
 
-        (key,) = initPool(currency0, currency1, mockHooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES);
+        (key,) = initPool(currency0, currency1, mockHooks, 3000, SQRT_PRICE_1_1);
 
         modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
         snapLastCall("addLiquidity with empty hook");
@@ -462,7 +462,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         vm.etch(allHooksAddr, address(impl).code);
         MockHooks mockHooks = MockHooks(allHooksAddr);
 
-        (key,) = initPool(currency0, currency1, mockHooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES);
+        (key,) = initPool(currency0, currency1, mockHooks, 3000, SQRT_PRICE_1_1);
         modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
 
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
@@ -529,7 +529,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         MockContract(mockAddr).setImplementation(hookAddr);
 
-        (key,) = initPoolAndAddLiquidity(currency0, currency1, IHooks(mockAddr), 3000, SQRT_PRICE_1_1, ZERO_BYTES);
+        (key,) = initPoolAndAddLiquidity(currency0, currency1, IHooks(mockAddr), 3000, SQRT_PRICE_1_1);
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false});
@@ -555,7 +555,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         vm.etch(hookAddr, address(impl).code);
         MockHooks mockHooks = MockHooks(hookAddr);
 
-        (key,) = initPoolAndAddLiquidity(currency0, currency1, mockHooks, 100, SQRT_PRICE_1_1, ZERO_BYTES);
+        (key,) = initPoolAndAddLiquidity(currency0, currency1, mockHooks, 100, SQRT_PRICE_1_1);
 
         IPoolManager.SwapParams memory swapParams =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 10, sqrtPriceLimitX96: SQRT_PRICE_1_2});
@@ -583,7 +583,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         vm.etch(hookAddr, address(impl).code);
         MockHooks mockHooks = MockHooks(hookAddr);
 
-        (key,) = initPoolAndAddLiquidity(currency0, currency1, mockHooks, 100, SQRT_PRICE_1_1, ZERO_BYTES);
+        (key,) = initPoolAndAddLiquidity(currency0, currency1, mockHooks, 100, SQRT_PRICE_1_1);
 
         IPoolManager.SwapParams memory swapParams =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -10, sqrtPriceLimitX96: SQRT_PRICE_1_2});
@@ -631,7 +631,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         vm.etch(allHooksAddr, address(impl).code);
         MockHooks mockHooks = MockHooks(allHooksAddr);
 
-        (key,) = initPoolAndAddLiquidity(currency0, currency1, mockHooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES);
+        (key,) = initPoolAndAddLiquidity(currency0, currency1, mockHooks, 3000, SQRT_PRICE_1_1);
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
@@ -822,7 +822,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     function test_donate_failsIfNoLiquidity(uint160 sqrtPriceX96) public {
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
-        (key,) = initPool(currency0, currency1, IHooks(address(0)), 100, sqrtPriceX96, ZERO_BYTES);
+        (key,) = initPool(currency0, currency1, IHooks(address(0)), 100, sqrtPriceX96);
 
         vm.expectRevert(Pool.NoLiquidityToReceiveFees.selector);
         donateRouter.donate(key, 100, 100, ZERO_BYTES);
@@ -861,7 +861,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         vm.etch(hookAddr, address(impl).code);
         MockHooks mockHooks = MockHooks(hookAddr);
 
-        (key,) = initPoolAndAddLiquidity(currency0, currency1, mockHooks, 100, SQRT_PRICE_1_1, ZERO_BYTES);
+        (key,) = initPoolAndAddLiquidity(currency0, currency1, mockHooks, 100, SQRT_PRICE_1_1);
 
         mockHooks.setReturnValue(mockHooks.beforeDonate.selector, bytes4(0xdeadbeef));
         mockHooks.setReturnValue(mockHooks.afterDonate.selector, bytes4(0xdeadbeef));
@@ -883,7 +883,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         vm.etch(hookAddr, address(impl).code);
         MockHooks mockHooks = MockHooks(hookAddr);
 
-        (key,) = initPoolAndAddLiquidity(currency0, currency1, mockHooks, 100, SQRT_PRICE_1_1, ZERO_BYTES);
+        (key,) = initPoolAndAddLiquidity(currency0, currency1, mockHooks, 100, SQRT_PRICE_1_1);
 
         mockHooks.setReturnValue(mockHooks.beforeDonate.selector, mockHooks.beforeDonate.selector);
         mockHooks.setReturnValue(mockHooks.afterDonate.selector, mockHooks.afterDonate.selector);
@@ -925,8 +925,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             (currency0Invalid ? currency0 : invalidCurrency),
             IHooks(address(0)),
             3000,
-            SQRT_PRICE_1_1,
-            ZERO_BYTES
+            SQRT_PRICE_1_1
         );
 
         (uint256 amount0, uint256 amount1) = currency0Invalid ? (1, 0) : (0, 1);
@@ -1160,7 +1159,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     //         hooks: IHooks(address(0)),
     //         tickSpacing: 10
     //     });
-    //     manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
+    //     manager.initialize(key, SQRT_PRICE_1_1);
 
     //     PoolId poolId = key.toId();
     //     bytes32 slot0Bytes = manager.extsload(keccak256(abi.encode(poolId, POOL_SLOT)));
@@ -1184,7 +1183,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     //         hooks: IHooks(address(0)),
     //         tickSpacing: 10
     //     });
-    //     manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
+    //     manager.initialize(key, SQRT_PRICE_1_1);
 
     //     // populate feeGrowthGlobalX128 struct w/ modify + swap
     //     modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-120, 120, 5 ether, 0));

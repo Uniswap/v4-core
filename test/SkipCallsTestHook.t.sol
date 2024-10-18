@@ -30,7 +30,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
         assertEq(skipCallsTestHook.counter(), 0);
 
-        (key,) = initPool(currency0, currency1, IHooks(address(skipCallsTestHook)), 3000, SQRT_PRICE_1_1, ZERO_BYTES);
+        (key,) = initPool(currency0, currency1, IHooks(address(skipCallsTestHook)), 3000, SQRT_PRICE_1_1);
     }
 
     function approveAndAddLiquidity(SkipCallsTestHook skipCallsTestHook) private {

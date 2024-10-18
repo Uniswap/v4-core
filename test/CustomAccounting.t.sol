@@ -65,7 +65,7 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         vm.etch(hookAddr, implAddr.code);
         hook = hookAddr;
 
-        (key,) = initPoolAndAddLiquidity(currency0, currency1, IHooks(hookAddr), 100, SQRT_PRICE_1_1, ZERO_BYTES);
+        (key,) = initPoolAndAddLiquidity(currency0, currency1, IHooks(hookAddr), 100, SQRT_PRICE_1_1);
     }
 
     // ------------------------ SWAP  ------------------------

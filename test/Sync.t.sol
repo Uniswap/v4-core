@@ -108,7 +108,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         PoolKey memory key2 =
             PoolKey({currency0: cur0, currency1: cur1, fee: 3000, tickSpacing: 60, hooks: IHooks(address(0))});
 
-        manager.initialize(key2, SQRT_PRICE_1_1, new bytes(0));
+        manager.initialize(key2, SQRT_PRICE_1_1);
 
         modifyLiquidityRouter.modifyLiquidity(key2, IPoolManager.ModifyLiquidityParams(-60, 60, 100, 0), new bytes(0));
         (uint256 balanceCurrency2) = currency2.balanceOf(address(manager));
