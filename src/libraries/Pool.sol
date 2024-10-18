@@ -381,17 +381,13 @@ library Pool {
             // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
             if (protocolFee > 0) {
                 unchecked {
-                    uint256 delta;
-                    if (swapFee != protocolFee) {
-                        // step.amountIn does not include the swap fee, as it's already been taken from it,
-                        // so add it back to get the total amountIn and use that to calculate the amount of fees owed to the protocol
-                        // this line cannot overflow due to limits on the size of protocolFee and params.amountSpecified
-                        // this rounds down to favor LPs over the protocol
-                        delta = (step.amountIn + step.feeAmount) * protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
-                    } else {
-                        // if the protocol fee is the same as the swap fee, the entire fee is owed to the protocol
-                        delta = step.feeAmount;
-                    }
+                    // step.amountIn does not include the swap fee, as it's already been taken from it,
+                    // so add it back to get the total amountIn and use that to calculate the amount of fees owed to the protocol
+                    // cannot overflow due to limits on the size of protocolFee and params.amountSpecified
+                    // this rounds down to favor LPs over the protocol
+                    uint256 delta = (swapFee == protocolFee)
+                        ? step.feeAmount // if there is no lp fee, the entire fee is owed to the protocol instead
+                        : (step.amountIn + step.feeAmount) * protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
                     // subtract it from the total fee and add it to the protocol fee
                     step.feeAmount -= delta;
                     amountToProtocol += delta;
