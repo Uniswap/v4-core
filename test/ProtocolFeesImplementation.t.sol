@@ -33,20 +33,20 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
     }
 
     function test_setProtocolFeeController_succeedsNoRevert() public {
-        assertEq(address(protocolFees.protocolFeeController()), address(0));
+        assertEq(protocolFees.protocolFeeController(), address(0));
         vm.expectEmit(true, false, false, false, address(protocolFees));
         emit ProtocolFeeControllerUpdated(feeController);
         protocolFees.setProtocolFeeController(feeController);
-        assertEq(address(protocolFees.protocolFeeController()), feeController);
+        assertEq(protocolFees.protocolFeeController(), feeController);
     }
 
     function test_setProtocolFeeController_revertsWithNotAuthorized() public {
-        assertEq(address(protocolFees.protocolFeeController()), address(0));
+        assertEq(protocolFees.protocolFeeController(), address(0));
 
         vm.prank(address(1)); // not the owner address
         vm.expectRevert("UNAUTHORIZED");
         protocolFees.setProtocolFeeController(feeController);
-        assertEq(address(protocolFees.protocolFeeController()), address(0));
+        assertEq(protocolFees.protocolFeeController(), address(0));
     }
 
     function test_setProtocolFee_succeeds_gas() public {

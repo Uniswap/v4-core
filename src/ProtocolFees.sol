@@ -27,12 +27,12 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
     /// @inheritdoc IProtocolFees
     function setProtocolFeeController(address controller) external onlyOwner {
         protocolFeeController = controller;
-        emit ProtocolFeeControllerUpdated(address(controller));
+        emit ProtocolFeeControllerUpdated(controller);
     }
 
     /// @inheritdoc IProtocolFees
     function setProtocolFee(PoolKey memory key, uint24 newProtocolFee) external {
-        if (msg.sender != address(protocolFeeController)) InvalidCaller.selector.revertWith();
+        if (msg.sender != protocolFeeController) InvalidCaller.selector.revertWith();
         if (!newProtocolFee.isValidProtocolFee()) ProtocolFeeTooLarge.selector.revertWith(newProtocolFee);
         PoolId id = key.toId();
         _getPool(id).setProtocolFee(newProtocolFee);
@@ -44,7 +44,7 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
         external
         returns (uint256 amountCollected)
     {
-        if (msg.sender != address(protocolFeeController)) InvalidCaller.selector.revertWith();
+        if (msg.sender != protocolFeeController) InvalidCaller.selector.revertWith();
         if (_isUnlocked()) ContractUnlocked.selector.revertWith();
 
         amountCollected = (amount == 0) ? protocolFeesAccrued[currency] : amount;
