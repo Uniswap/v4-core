@@ -47,6 +47,6 @@ interface IProtocolFees {
         returns (uint256 amountCollected);
 
     /// @notice Returns the current protocol fee controller address
-    /// @return address The currenct protocol fee controller address
+    /// @return address The current protocol fee controller address
     function protocolFeeController() external view returns (address);
 }
