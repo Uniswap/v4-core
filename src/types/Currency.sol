@@ -83,7 +83,7 @@ library CurrencyLibrary {
             // revert with ERC20TransferFailed, containing the bubbled up error as an argument
             if (!success) {
                 CustomRevert.bubbleUpAndRevertWith(
-                    Currency.unwrap(currency), bytes4(0xa9059cbb), ERC20TransferFailed.selector
+                    Currency.unwrap(currency), IERC20Minimal.transfer.selector, ERC20TransferFailed.selector
                 );
             }
         }
