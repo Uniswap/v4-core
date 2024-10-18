@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import {Currency} from "../types/Currency.sol";
-import {IProtocolFeeController} from "../interfaces/IProtocolFeeController.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 
@@ -35,7 +34,7 @@ interface IProtocolFees {
 
     /// @notice Sets the protocol fee controller
     /// @param controller The new protocol fee controller
-    function setProtocolFeeController(IProtocolFeeController controller) external;
+    function setProtocolFeeController(address controller) external;
 
     /// @notice Collects the protocol fees for a given recipient and currency, returning the amount collected
     /// @dev This will revert if the contract is unlocked
@@ -48,6 +47,6 @@ interface IProtocolFees {
         returns (uint256 amountCollected);
 
     /// @notice Returns the current protocol fee controller address
-    /// @return IProtocolFeeController The currency protocol fee controller
-    function protocolFeeController() external view returns (IProtocolFeeController);
+    /// @return address The currenct protocol fee controller address
+    function protocolFeeController() external view returns (address);
 }

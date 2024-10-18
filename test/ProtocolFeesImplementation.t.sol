@@ -14,7 +14,6 @@ import {Deployers} from "../test/utils/Deployers.sol";
 import {PoolId} from "../src/types/PoolId.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {Constants} from "../test/utils/Constants.sol";
-import {ProtocolFeeControllerTest} from "../src/test/ProtocolFeeControllerTest.sol";
 
 contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
     using ProtocolFeeLibrary for uint24;
@@ -28,7 +27,7 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
 
     function setUp() public {
         protocolFees = new ProtocolFeesImplementation();
-        feeController = new ProtocolFeeControllerTest();
+        feeController = makeAddr("feeController");
         (currency0, currency1) = deployAndMint2Currencies();
         MockERC20(Currency.unwrap(currency0)).transfer(address(protocolFees), 2 ** 255);
     }

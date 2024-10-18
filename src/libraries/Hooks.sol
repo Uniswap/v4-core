@@ -159,7 +159,7 @@ library Hooks {
     function callHookWithReturnDelta(IHooks self, bytes memory data, bool parseReturn) internal returns (int256) {
         bytes memory result = callHook(self, data);
 
-        // If this hook wasnt meant to return something, default to 0 delta
+        // If this hook wasn't meant to return something, default to 0 delta
         if (!parseReturn) return 0;
 
         // A length of 64 bytes is required to return a bytes4, and a 32 byte delta
