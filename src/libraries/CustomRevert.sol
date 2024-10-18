@@ -79,7 +79,7 @@ library CustomRevert {
     }
 
     /// @notice bubble up the revert message returned by a call and revert with a wrapped ERC-7751 error
-    function bubbleUpAndRevertWith(address target, bytes4 functionSelector, bytes4 additionalContext) internal pure {
+    function bubbleUpAndRevertWith(address revertingContract, bytes4 revertingFunctionSelector, bytes4 additionalContext) internal pure {
         bytes4 wrappedErrorSelector = WrappedError.selector;
         assembly ("memory-safe") {
             let size := returndatasize()
@@ -90,8 +90,8 @@ library CustomRevert {
 
             // Encode wrapped error selector, address, function selector, offset, additional context, size, revert reason
             mstore(fmp, wrappedErrorSelector)
-            mstore(add(fmp, 0x04), target)
-            mstore(add(fmp, 0x24), functionSelector)
+            mstore(add(fmp, 0x04), revertingContract)
+            mstore(add(fmp, 0x24), revertingFunctionSelector)
             // offset revert reason
             mstore(add(fmp, 0x44), 0x80)
             // offset additional context
