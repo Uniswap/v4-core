@@ -222,7 +222,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         dynamicFeesHooks.setFee(999999);
 
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         manager.setProtocolFee(key, 1000);
 
         IPoolManager.SwapParams memory params =
@@ -239,7 +239,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         dynamicFeesHooks.setFee(1000000);
 
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         manager.setProtocolFee(key, 1000);
 
         IPoolManager.SwapParams memory params =
@@ -261,7 +261,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         dynamicFeesHooks.setFee(123);
 
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         manager.setProtocolFee(key, 1000);
 
         PoolSwapTest.TestSettings memory testSettings =
@@ -288,7 +288,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         uint24 protocolFee = (uint24(protocolFee1) << 12) | uint24(protocolFee0);
         dynamicFeesHooks.setFee(lpFee);
 
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         manager.setProtocolFee(key, protocolFee);
 
         IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
