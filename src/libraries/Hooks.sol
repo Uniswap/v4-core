@@ -258,7 +258,8 @@ library Hooks {
             // A length of 96 bytes is required to return a bytes4, a 32 byte delta, and an LP fee
             if (result.length != 96) InvalidHookResponse.selector.revertWith();
 
-            // dynamic fee pools that do not want to override the cache fee, return 0 otherwise they return a valid fee with the override flag
+            // dynamic fee pools that want to override the cache fee, return a valid fee with the override flag. If override flag
+            // is set but an invalid fee is returned, the transaction will revert. Otherwise the current LP fee will be used
             if (key.fee.isDynamicFee()) lpFeeOverride = result.parseFee();
 
             // skip this logic for the case where the hook return is 0
