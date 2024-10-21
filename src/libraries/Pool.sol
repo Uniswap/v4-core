@@ -535,7 +535,8 @@ library Pool {
             }
         }
 
-        // when the lower (upper) tick is crossed left to right (right to left), liquidity must be added (removed)
+        // when the lower (upper) tick is crossed left to right, liquidity must be added (removed)
+        // when the lower (upper) tick is crossed right to left, liquidity must be removed (added)
         int128 liquidityNet = upper ? liquidityNetBefore - liquidityDelta : liquidityNetBefore + liquidityDelta;
         assembly ("memory-safe") {
             // liquidityGrossAfter and liquidityNet are packed in the first slot of `info`
@@ -561,6 +562,7 @@ library Pool {
     function tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) internal pure returns (uint128 result) {
         // Equivalent to:
         // int24 minTick = (TickMath.MIN_TICK / tickSpacing);
+        // if (TickMath.MIN_TICK  % tickSpacing != 0) minTick--;
         // int24 maxTick = (TickMath.MAX_TICK / tickSpacing);
         // uint24 numTicks = maxTick - minTick + 1;
         // return type(uint128).max / numTicks;
