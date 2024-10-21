@@ -8,6 +8,7 @@ import {Hooks} from "../../src/libraries/Hooks.sol";
 import {TickMath} from "../../src/libraries/TickMath.sol";
 import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
+import {Slot0} from "../../src/types/Slot0.sol";
 import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
 import {PoolId} from "../../src/types/PoolId.sol";
 import {Currency} from "../../src/types/Currency.sol";
@@ -36,6 +37,38 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         manager.initialize(key, SQRT_PRICE_1_1);
     }
 
+    function test_getPoolState() public {
+        // create liquidity
+        modifyLiquidityRouter.modifyLiquidity(
+            key, IPoolManager.ModifyLiquidityParams(-60, 60, 10_000 ether, 0), ZERO_BYTES
+        );
+
+        modifyLiquidityRouter.modifyLiquidity(
+            key, IPoolManager.ModifyLiquidityParams(-600, 600, 10_000 ether, 0), ZERO_BYTES
+        );
+
+        // swap to create fees, crossing a tick
+        uint256 swapAmount = 100 ether;
+        swap(key, true, -int256(swapAmount), ZERO_BYTES);
+
+        (Slot0 slot0, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128, uint128 liquidity) =
+            StateLibrary.getPoolState(manager, poolId);
+        snapLastCall("extsload getPoolState");
+
+        assertEq(slot0.sqrtPriceX96(), 78680104762184586858280382455);
+        assertEq(slot0.tick(), -139);
+        assertEq(slot0.protocolFee(), 0);
+        assertEq(slot0.lpFee(), 3000);
+
+        uint256 liquidityExpected = StateLibrary.getLiquidity(manager, poolId);
+        assertEq(liquidity, liquidityExpected);
+
+        (uint256 feeGrowthGlobal0Expected, uint256 feeGrowthGlobal1Expected) =
+            StateLibrary.getFeeGrowthGlobals(manager, poolId);
+        assertEq(feeGrowthGlobal0X128, feeGrowthGlobal0Expected);
+        assertEq(feeGrowthGlobal1X128, feeGrowthGlobal1Expected);
+    }
+
     function test_getSlot0() public {
         // create liquidity
         modifyLiquidityRouter.modifyLiquidity(
@@ -49,15 +82,15 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         // swap to create fees, crossing a tick
         uint256 swapAmount = 100 ether;
         swap(key, true, -int256(swapAmount), ZERO_BYTES);
-        (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 swapFee) = StateLibrary.getSlot0(manager, poolId);
+
+        (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee) = StateLibrary.getSlot0(manager, poolId);
         snapLastCall("extsload getSlot0");
-        assertEq(tick, -139);
 
         // magic number verified against a native getter
         assertEq(sqrtPriceX96, 78680104762184586858280382455);
         assertEq(tick, -139);
         assertEq(protocolFee, 0); // tested in protocol fee tests
-        assertEq(swapFee, 3000);
+        assertEq(lpFee, 3000);
     }
 
     function test_getTickLiquidity() public {
