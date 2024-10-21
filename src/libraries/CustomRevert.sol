@@ -95,7 +95,10 @@ library CustomRevert {
             // Encode wrapped error selector, address, function selector, offset, additional context, size, revert reason
             mstore(fmp, wrappedErrorSelector)
             mstore(add(fmp, 0x04), and(revertingContract, 0xffffffffffffffffffffffffffffffffffffffff))
-            mstore(add(fmp, 0x24), and(revertingFunctionSelector, 0xffffffff00000000000000000000000000000000000000000000000000000000))
+            mstore(
+                add(fmp, 0x24),
+                and(revertingFunctionSelector, 0xffffffff00000000000000000000000000000000000000000000000000000000)
+            )
             // offset revert reason
             mstore(add(fmp, 0x44), 0x80)
             // offset additional context
@@ -107,7 +110,10 @@ library CustomRevert {
             // size additional context
             mstore(add(fmp, add(0xa4, encodedDataSize)), 0x04)
             // additional context
-            mstore(add(fmp, add(0xc4, encodedDataSize)), and(additionalContext, 0xffffffff00000000000000000000000000000000000000000000000000000000))
+            mstore(
+                add(fmp, add(0xc4, encodedDataSize)),
+                and(additionalContext, 0xffffffff00000000000000000000000000000000000000000000000000000000)
+            )
             revert(fmp, add(0xe4, encodedDataSize))
         }
     }
