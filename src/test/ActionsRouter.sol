@@ -9,8 +9,11 @@ import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {StateLibrary} from "../libraries/StateLibrary.sol";
 import {TransientStateLibrary} from "../libraries/TransientStateLibrary.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
+import {IHooks} from "../interfaces/IHooks.sol";
 
+import {PoolKey} from "../types/PoolKey.sol";
 // Supported Actions.
+
 enum Actions {
     SETTLE,
     SETTLE_NATIVE,
@@ -24,7 +27,10 @@ enum Actions {
     ASSERT_RESERVES_EQUALS,
     ASSERT_DELTA_EQUALS,
     ASSERT_NONZERO_DELTA_COUNT_EQUALS,
-    TRANSFER_FROM
+    TRANSFER_FROM,
+    MODIFY_LIQUIDITY,
+    INITIALIZE,
+    SWAP
 }
 // TODO: Add other actions as needed.
 // BURN,
@@ -81,6 +87,12 @@ contract ActionsRouter is IUnlockCallback, Test, GasSnapshot {
                 _assertNonzeroDeltaCountEquals(param);
             } else if (action == Actions.TRANSFER_FROM) {
                 _transferFrom(param);
+            } else if (action == Actions.MODIFY_LIQUIDITY) {
+                _modifyLiquidity(param);
+            } else if (action == Actions.INITIALIZE) {
+                _initialize(param);
+            } else if (action == Actions.SWAP) {
+                _swap(param);
             }
         }
         return "";
@@ -106,6 +118,7 @@ contract ActionsRouter is IUnlockCallback, Test, GasSnapshot {
 
     function _take(bytes memory params) internal {
         (Currency currency, address recipient, int128 amount) = abi.decode(params, (Currency, address, int128));
+        if (amount == type(int128).max) amount = int128(manager.currencyDelta(address(this), currency));
         manager.take(currency, recipient, uint128(amount));
     }
 
@@ -158,6 +171,61 @@ contract ActionsRouter is IUnlockCallback, Test, GasSnapshot {
     function _transferFrom(bytes memory params) internal {
         (Currency currency, address from, address recipient, uint256 amount) =
             abi.decode(params, (Currency, address, address, uint256));
+        if (amount == type(uint256).max) amount = uint256(-(manager.currencyDelta(address(this), currency)));
         MockERC20(Currency.unwrap(currency)).transferFrom(from, recipient, uint256(amount));
+    }
+
+    function _modifyLiquidity(bytes memory params) internal {
+        (
+            Currency currency0,
+            Currency currency1,
+            uint24 fee,
+            int24 tickSpacing,
+            IHooks hooks,
+            int24 tickLower,
+            int24 tickUpper,
+            int256 liquidityDelta,
+            bytes32 salt
+        ) = abi.decode(params, (Currency, Currency, uint24, int24, IHooks, int24, int24, int256, bytes32));
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: fee, tickSpacing: tickSpacing, hooks: hooks});
+        IPoolManager.ModifyLiquidityParams memory _params = IPoolManager.ModifyLiquidityParams({
+            tickLower: tickLower,
+            tickUpper: tickUpper,
+            liquidityDelta: liquidityDelta,
+            salt: salt
+        });
+
+        manager.modifyLiquidity(key, _params, "");
+    }
+
+    function _swap(bytes memory params) internal {
+        (
+            Currency currency0,
+            Currency currency1,
+            uint24 fee,
+            int24 tickSpacing,
+            IHooks hooks,
+            bool zeroForOne,
+            int256 amountSpecified,
+            uint160 sqrtPriceLimitX96
+        ) = abi.decode(params, (Currency, Currency, uint24, int24, IHooks, bool, int256, uint160));
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: fee, tickSpacing: tickSpacing, hooks: hooks});
+        IPoolManager.SwapParams memory _params = IPoolManager.SwapParams({
+            zeroForOne: zeroForOne,
+            amountSpecified: amountSpecified,
+            sqrtPriceLimitX96: sqrtPriceLimitX96
+        });
+
+        manager.swap(key, _params, "");
+    }
+
+    function _initialize(bytes memory params) internal {
+        (Currency currency0, Currency currency1, uint24 fee, int24 tickSpacing, IHooks hooks, uint160 sqrtPriceX96) =
+            abi.decode(params, (Currency, Currency, uint24, int24, IHooks, uint160));
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: fee, tickSpacing: tickSpacing, hooks: hooks});
+        manager.initialize(key, sqrtPriceX96);
     }
 }

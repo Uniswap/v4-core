@@ -144,7 +144,7 @@ contract Deployers is Test {
         internal
         returns (PoolKey memory _key, PoolId id)
     {
-        _key = PoolKey(_currency0, _currency1, fee, fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2), hooks);
+        _key = PoolKey(_currency0, _currency1, fee, 1, hooks);
         id = _key.toId();
         manager.initialize(_key, sqrtPriceX96);
     }
