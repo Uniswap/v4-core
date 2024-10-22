@@ -33,10 +33,20 @@ contract JITLiquidity is Test, Deployers, GasSnapshot {
 
     // PoolManager has no balance of currency2.
     Currency currency2;
+    address swapper;
 
     function setUp() public {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
         currency2 = deployMintAndApproveCurrency();
+
+        // seed the swapper with a balance
+        swapper = makeAddr("swapper");
+        currency0.transfer(swapper, 20e30);
+        currency1.transfer(swapper, 20e30);
+        vm.startPrank(swapper);
+        MockERC20(Currency.unwrap(currency0)).approve(address(actionsRouter), type(uint256).max);
+        MockERC20(Currency.unwrap(currency1)).approve(address(actionsRouter), type(uint256).max);
+        vm.stopPrank();
     }
 
     function test_SwapWithJitLiquidity() public {
@@ -98,25 +108,26 @@ contract JITLiquidity is Test, Deployers, GasSnapshot {
 
         // TAKE CURRENCY 0 OUT OF POOL MANAGER
         actions[3] = Actions.TAKE;
-        actions_params[3] = abi.encode(currency0, address(this), type(int128).max);
+        actions_params[3] = abi.encode(currency0, swapper, type(int128).max);
 
         // PAY OFF CURRENCY 1 TO POOL MANAGER
         actions[4] = Actions.SYNC;
         actions_params[4] = abi.encode(currency1);
 
         actions[5] = Actions.TRANSFER_FROM;
-        actions_params[5] = abi.encode(currency1, address(this), address(manager), type(uint256).max);
+        actions_params[5] = abi.encode(currency1, swapper, address(manager), type(uint256).max);
 
         actions[6] = Actions.SETTLE;
         actions_params[6] = abi.encode(currency1);
 
-        uint256 balanceBefore0 = currency0.balanceOf(address(this));
-        uint256 balanceBefore1 = currency1.balanceOf(address(this));
+        uint256 balanceBefore0 = currency0.balanceOf(swapper);
+        uint256 balanceBefore1 = currency1.balanceOf(swapper);
 
+        vm.prank(swapper);
         actionsRouter.executeActions(actions, actions_params);
 
-        uint256 balanceAfter0 = currency0.balanceOf(address(this));
-        uint256 balanceAfter1 = currency1.balanceOf(address(this));
+        uint256 balanceAfter0 = currency0.balanceOf(swapper);
+        uint256 balanceAfter1 = currency1.balanceOf(swapper);
 
         console.log("amount of currency 0 received: %e", balanceAfter0 - balanceBefore0);
         console.log("amount of currency 1 paid: %e", (balanceBefore1 - balanceAfter1));
@@ -170,25 +181,26 @@ contract JITLiquidity is Test, Deployers, GasSnapshot {
 
         // TAKE CURRENCY 0 OUT OF POOL MANAGER
         actions[1] = Actions.TAKE;
-        actions_params[1] = abi.encode(currency0, address(this), type(int128).max);
+        actions_params[1] = abi.encode(currency0, swapper, type(int128).max);
 
         // PAY OFF CURRENCY 1 TO POOL MANAGER
         actions[2] = Actions.SYNC;
         actions_params[2] = abi.encode(currency1);
 
         actions[3] = Actions.TRANSFER_FROM;
-        actions_params[3] = abi.encode(currency1, address(this), address(manager), type(uint256).max);
+        actions_params[3] = abi.encode(currency1, swapper, address(manager), type(uint256).max);
 
         actions[4] = Actions.SETTLE;
         actions_params[4] = abi.encode(currency1);
 
-        uint256 balanceBefore0 = currency0.balanceOf(address(this));
-        uint256 balanceBefore1 = currency1.balanceOf(address(this));
+        uint256 balanceBefore0 = currency0.balanceOf(swapper);
+        uint256 balanceBefore1 = currency1.balanceOf(swapper);
 
+        vm.prank(swapper);
         actionsRouter.executeActions(actions, actions_params);
 
-        uint256 balanceAfter0 = currency0.balanceOf(address(this));
-        uint256 balanceAfter1 = currency1.balanceOf(address(this));
+        uint256 balanceAfter0 = currency0.balanceOf(swapper);
+        uint256 balanceAfter1 = currency1.balanceOf(swapper);
 
         console.log("amount of currency 0 received: %e", balanceAfter0 - balanceBefore0);
         console.log("amount of currency 1 paid: %e", (balanceBefore1 - balanceAfter1));
