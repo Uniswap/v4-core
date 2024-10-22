@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import {Currency} from "./types/Currency.sol";
 import {CurrencyReserves} from "./libraries/CurrencyReserves.sol";
-import {IProtocolFeeController} from "./interfaces/IProtocolFeeController.sol";
 import {IProtocolFees} from "./interfaces/IProtocolFees.sol";
 import {PoolKey} from "./types/PoolKey.sol";
 import {ProtocolFeeLibrary} from "./libraries/ProtocolFeeLibrary.sol";
@@ -22,19 +21,19 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
     mapping(Currency currency => uint256 amount) public protocolFeesAccrued;
 
     /// @inheritdoc IProtocolFees
-    IProtocolFeeController public protocolFeeController;
+    address public protocolFeeController;
 
     constructor() Owned(msg.sender) {}
 
     /// @inheritdoc IProtocolFees
-    function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {
+    function setProtocolFeeController(address controller) external onlyOwner {
         protocolFeeController = controller;
-        emit ProtocolFeeControllerUpdated(address(controller));
+        emit ProtocolFeeControllerUpdated(controller);
     }
 
     /// @inheritdoc IProtocolFees
     function setProtocolFee(PoolKey memory key, uint24 newProtocolFee) external {
-        if (msg.sender != address(protocolFeeController)) InvalidCaller.selector.revertWith();
+        if (msg.sender != protocolFeeController) InvalidCaller.selector.revertWith();
         if (!newProtocolFee.isValidProtocolFee()) ProtocolFeeTooLarge.selector.revertWith(newProtocolFee);
         PoolId id = key.toId();
         _getPool(id).setProtocolFee(newProtocolFee);
@@ -46,7 +45,7 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
         external
         returns (uint256 amountCollected)
     {
-        if (msg.sender != address(protocolFeeController)) InvalidCaller.selector.revertWith();
+        if (msg.sender != protocolFeeController) InvalidCaller.selector.revertWith();
         if (!currency.isAddressZero() && CurrencyReserves.getSyncedCurrency() == currency) {
             ProtocolFeeCurrencySynced.selector.revertWith();
         }
