@@ -33,7 +33,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         currency2 = deployMintAndApproveCurrency();
     }
 
-    function test_settle_worksInIsolation() public {
+    function test_sync_worksInIsolation() public {
         manager.sync(currency0);
     }
 
