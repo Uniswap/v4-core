@@ -86,6 +86,8 @@ contract JITLiquidity is Test, Deployers, GasSnapshot {
         bytes32 positionId = Position.calculatePositionKey(address(actionsRouter), -120, 120, 0);
 
         // -------  CREATE JIT TRANSACTION
+        params.salt = bytes32(bytes1(0x01));
+
         // ADD LIQUIDITY
         actions[0] = Actions.MODIFY_LIQUIDITY;
         params.liquidityDelta = 1e25;
