@@ -47,6 +47,7 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
     {
         if (msg.sender != protocolFeeController) InvalidCaller.selector.revertWith();
         if (!currency.isAddressZero() && CurrencyReserves.getSyncedCurrency() == currency) {
+            // prevent transfer between the sync and settle balanceOfs (native settle uses msg.value)
             ProtocolFeeCurrencySynced.selector.revertWith();
         }
 
