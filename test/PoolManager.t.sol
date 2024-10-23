@@ -984,8 +984,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_locked_revertsWithProtocolFeeCurrencySynced() public {
-        manager.setProtocolFeeController(address(this));
         manager.sync(key.currency0);
+        vm.prank(feeController);
         vm.expectRevert(IProtocolFees.ProtocolFeeCurrencySynced.selector);
         manager.collectProtocolFees(address(this), key.currency0, 1);
     }
