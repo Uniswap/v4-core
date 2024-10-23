@@ -983,6 +983,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         manager.burn(address(this), key.currency0.toId(), 1);
     }
 
+    function test_collectProtocolFees_locked_revertsWithProtocolFeeCurrencySynced() public {
+        manager.setProtocolFeeController(address(this));
+        manager.sync(key.currency0);
+        vm.expectRevert(IProtocolFees.ProtocolFeeCurrencySynced.selector);
+        manager.collectProtocolFees(address(this), key.currency0, 1);
+    }
+
     function test_collectProtocolFees_ERC20_accumulateFees_gas() public {
         uint256 expectedFees = 10;
 
