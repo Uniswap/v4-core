@@ -31,6 +31,7 @@ import {AmountHelpers} from "./utils/AmountHelpers.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
+import {TransientStateLibrary} from "../src/libraries/TransientStateLibrary.sol";
 import {Actions} from "../src/test/ActionsRouter.sol";
 
 contract PoolManagerTest is Test, Deployers, GasSnapshot {
@@ -39,6 +40,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using SafeCast for *;
     using ProtocolFeeLibrary for uint24;
     using StateLibrary for IPoolManager;
+    using TransientStateLibrary for IPoolManager;
 
     event UnlockCallback();
     event ProtocolFeeControllerUpdated(address feeController);
@@ -984,10 +986,12 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_locked_revertsWithProtocolFeeCurrencySynced() public {
-        manager.sync(key.currency0);
+        assertNotEq(Currency.unwrap(key.currency1), address(0));
+        manager.sync(key.currency1);
+        assertEq(Currency.unwrap(key.currency1), Currency.unwrap(manager.getSyncedCurrency()));
         vm.prank(feeController);
         vm.expectRevert(IProtocolFees.ProtocolFeeCurrencySynced.selector);
-        manager.collectProtocolFees(address(this), key.currency0, 1);
+        manager.collectProtocolFees(address(this), key.currency1, 1);
     }
 
     function test_collectProtocolFees_ERC20_accumulateFees_gas() public {
