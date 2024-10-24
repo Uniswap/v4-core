@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {TickMathTest} from "src/test/TickMathTest.sol";
 import {TickMath} from "src/libraries/TickMath.sol";
 import {JavascriptFfi} from "test/utils/JavascriptFfi.sol";
 
-contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
+contract TickMathTestTest is Test, JavascriptFfi {
     int24 constant MIN_TICK = TickMath.MIN_TICK;
     int24 constant MAX_TICK = TickMath.MAX_TICK;
 
@@ -225,24 +224,24 @@ contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
 
     /// @notice Benchmark the gas cost of `getSqrtPriceAtTick`
     function test_getSqrtPriceAtTick_gasCost() public {
-        snapStart("TickMathGetSqrtPriceAtTick");
+        vm.startSnapshotGas("TickMathGetSqrtPriceAtTick");
         unchecked {
             for (int24 tick = -50; tick < 50;) {
                 TickMath.getSqrtPriceAtTick(tick++);
             }
         }
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     /// @notice Benchmark the gas cost of `getTickAtSqrtPrice`
     function test_getTickAtSqrtPrice_gasCost() public {
-        snapStart("TickMathGetTickAtSqrtPrice");
+        vm.startSnapshotGas("TickMathGetTickAtSqrtPrice");
         unchecked {
             uint160 sqrtPriceX96 = 1 << 33;
             for (uint256 i; i++ < 100; sqrtPriceX96 <<= 1) {
                 TickMath.getTickAtSqrtPrice(sqrtPriceX96);
             }
         }
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 }

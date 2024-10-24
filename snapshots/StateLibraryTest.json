@@ -1,0 +1,12 @@
+{
+  "extsload getFeeGrowthGlobals": "774",
+  "extsload getFeeGrowthInside": "375",
+  "extsload getLiquidity": "375",
+  "extsload getPositionInfo": "949",
+  "extsload getPositionLiquidity": "375",
+  "extsload getSlot0": "375",
+  "extsload getTickBitmap": "375",
+  "extsload getTickFeeGrowthOutside": "774",
+  "extsload getTickInfo": "949",
+  "extsload getTickLiquidity": "375"
+}

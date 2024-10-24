@@ -16,13 +16,12 @@ import {MockHooks} from "../src/test/MockHooks.sol";
 import {MockContract} from "../src/test/MockContract.sol";
 import {EmptyTestHooks} from "../src/test/EmptyTestHooks.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolId} from "../src/types/PoolId.sol";
 import {LPFeeLibrary} from "../src/libraries/LPFeeLibrary.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 
-contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
+contract PoolManagerInitializeTest is Test, Deployers {
     using Hooks for IHooks;
     using LPFeeLibrary for uint24;
     using ProtocolFeeLibrary for uint24;
@@ -316,6 +315,6 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
     function test_initialize_gas() public {
         manager.initialize(uninitializedKey, SQRT_PRICE_1_1);
-        snapLastCall("initialize");
+        vm.snapshotGasLastCall("initialize");
     }
 }

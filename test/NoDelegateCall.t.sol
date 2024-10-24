@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {Test} from "forge-std/Test.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
@@ -11,7 +10,7 @@ import {PoolManager} from "../src/PoolManager.sol";
 import {NoDelegateCall} from "../src/NoDelegateCall.sol";
 import {Deployers} from "./utils/Deployers.sol";
 
-contract TestDelegateCall is Test, Deployers, GasSnapshot {
+contract TestDelegateCall is Test, Deployers {
     // override to use ProxyPoolManager
     function deployFreshManager() internal virtual override {
         IPoolManager delegateManager = new PoolManager();
@@ -27,7 +26,7 @@ contract TestDelegateCall is Test, Deployers, GasSnapshot {
     }
 
     function test_gas_noDelegateCall() public {
-        snap(
+        vm.snapshotValue(
             "NoDelegateCall",
             noDelegateCallTest.getGasCostOfCannotBeDelegateCalled()
                 - noDelegateCallTest.getGasCostOfCanBeDelegateCalled()
