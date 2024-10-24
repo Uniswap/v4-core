@@ -13,7 +13,6 @@ import {PoolKey} from "../src/types/PoolKey.sol";
 import {PoolManager} from "../src/PoolManager.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {DynamicFeesTestHook} from "../src/test/DynamicFeesTestHook.sol";
 import {Currency} from "../src/types/Currency.sol";
 import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
@@ -22,7 +21,7 @@ import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
 
-contract TestDynamicFees is Test, Deployers, GasSnapshot {
+contract TestDynamicFees is Test, Deployers {
     using StateLibrary for IPoolManager;
     using ProtocolFeeLibrary for uint16;
 
@@ -148,7 +147,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 123);
 
         swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
-        snapLastCall("update dynamic fee in before swap");
+        vm.snapshotGasLastCall("update dynamic fee in before swap");
 
         assertEq(_fetchPoolLPFee(key), 123);
     }
@@ -328,7 +327,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 123);
 
         swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
-        snapLastCall("swap with dynamic fee");
+        vm.snapshotGasLastCall("swap with dynamic fee");
     }
 
     function _fetchPoolLPFee(PoolKey memory _key) internal view returns (uint256 lpFee) {

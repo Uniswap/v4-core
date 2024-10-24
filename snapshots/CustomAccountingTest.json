@@ -1,0 +1,6 @@
+{
+  "addLiquidity CA fee": "170928",
+  "removeLiquidity CA fee": "141194",
+  "swap CA custom curve + swap noop": "124635",
+  "swap CA fee on unspecified": "154686"
+}

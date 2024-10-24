@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {Hooks} from "../../src/libraries/Hooks.sol";
@@ -25,7 +24,7 @@ import {EmptyRevertContract} from "../../src/test/EmptyRevertContract.sol";
 import {StateLibrary} from "../../src/libraries/StateLibrary.sol";
 import {Constants} from "../utils/Constants.sol";
 
-contract HooksTest is Test, Deployers, GasSnapshot {
+contract HooksTest is Test, Deployers {
     using Hooks for IHooks;
     using StateLibrary for IPoolManager;
 

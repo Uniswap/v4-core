@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {Hooks} from "../../src/libraries/Hooks.sol";
@@ -22,7 +21,7 @@ import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
 import {Constants} from "../utils/Constants.sol";
 
 /// @notice Testing Deployers.swap() and Deployers.swapNativeInput()
-contract SwapHelperTest is Test, Deployers, GasSnapshot {
+contract SwapHelperTest is Test, Deployers {
     using Hooks for IHooks;
 
     MockHooks mockHooks;
