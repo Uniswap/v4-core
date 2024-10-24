@@ -32,8 +32,11 @@ contract SyncTest is Test, Deployers {
         currency2 = deployMintAndApproveCurrency();
     }
 
-    function test_sync_worksInIsolation() public {
+    function test_sync_multiple_unlocked() public noIsolate {
+        manager.sync(currency1);
+        assertEq(Currency.unwrap(currency1), Currency.unwrap(manager.getSyncedCurrency()));
         manager.sync(currency0);
+        assertEq(Currency.unwrap(currency0), Currency.unwrap(manager.getSyncedCurrency()));
     }
 
     function test_sync_balanceIsZero() public {
