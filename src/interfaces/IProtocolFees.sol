@@ -10,11 +10,11 @@ interface IProtocolFees {
     /// @notice Thrown when protocol fee is set too high
     error ProtocolFeeTooLarge(uint24 fee);
 
-    /// @notice Thrown when the contract is unlocked
-    error ContractUnlocked();
-
     /// @notice Thrown when collectProtocolFees or setProtocolFee is not called by the controller.
     error InvalidCaller();
+
+    /// @notice Thrown when collectProtocolFees is attempted on a token that is synced.
+    error ProtocolFeeCurrencySynced();
 
     /// @notice Emitted when the protocol fee controller address is updated in setProtocolFeeController.
     event ProtocolFeeControllerUpdated(address indexed protocolFeeController);

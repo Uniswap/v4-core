@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Currency} from "./types/Currency.sol";
+import {CurrencyReserves} from "./libraries/CurrencyReserves.sol";
 import {IProtocolFees} from "./interfaces/IProtocolFees.sol";
 import {PoolKey} from "./types/PoolKey.sol";
 import {ProtocolFeeLibrary} from "./libraries/ProtocolFeeLibrary.sol";
@@ -45,7 +46,10 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
         returns (uint256 amountCollected)
     {
         if (msg.sender != protocolFeeController) InvalidCaller.selector.revertWith();
-        if (_isUnlocked()) ContractUnlocked.selector.revertWith();
+        if (!currency.isAddressZero() && CurrencyReserves.getSyncedCurrency() == currency) {
+            // prevent transfer between the sync and settle balanceOfs (native settle uses msg.value)
+            ProtocolFeeCurrencySynced.selector.revertWith();
+        }
 
         amountCollected = (amount == 0) ? protocolFeesAccrued[currency] : amount;
         protocolFeesAccrued[currency] -= amountCollected;
