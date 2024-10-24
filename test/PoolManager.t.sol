@@ -993,6 +993,21 @@ contract PoolManagerTest is Test, Deployers {
         manager.collectProtocolFees(address(this), key.currency1, 1);
     }
 
+    function test_sync_locked_collectProtocolFees_unlocked_revertsWithProtocolFeeCurrencySynced() public noIsolate {
+        manager.setProtocolFeeController(address(actionsRouter));
+        manager.sync(key.currency1);
+        assertEq(Currency.unwrap(key.currency1), Currency.unwrap(manager.getSyncedCurrency()));
+
+        Actions[] memory actions = new Actions[](1);
+        bytes[] memory params = new bytes[](1);
+
+        actions[0] = Actions.COLLECT_PROTOCOL_FEES;
+        params[0] = abi.encode(address(this), key.currency1, 1);
+
+        vm.expectRevert(IProtocolFees.ProtocolFeeCurrencySynced.selector);
+        actionsRouter.executeActions(actions, params);
+    }
+
     function test_collectProtocolFees_unlocked_revertsWithProtocolFeeCurrencySynced() public {
         manager.setProtocolFeeController(address(actionsRouter));
 
