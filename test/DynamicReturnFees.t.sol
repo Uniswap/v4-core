@@ -13,7 +13,6 @@ import {PoolKey} from "../src/types/PoolKey.sol";
 import {PoolManager} from "../src/PoolManager.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {DynamicReturnFeeTestHook} from "../src/test/DynamicReturnFeeTestHook.sol";
 import {Currency} from "../src/types/Currency.sol";
 import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
@@ -21,7 +20,7 @@ import {FullMath} from "../src/libraries/FullMath.sol";
 import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 
-contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
+contract TestDynamicReturnFees is Test, Deployers {
     using StateLibrary for IPoolManager;
     using LPFeeLibrary for uint24;
 
@@ -95,7 +94,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 123);
 
         swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
-        snapLastCall("swap with return dynamic fee");
+        vm.snapshotGasLastCall("swap with return dynamic fee");
 
         assertEq(_fetchPoolSwapFee(key), 0);
     }

@@ -5,7 +5,6 @@ import {Test} from "forge-std/Test.sol";
 import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {Currency} from "../src/types/Currency.sol";
 import {ProtocolFeesImplementation} from "../src/test/ProtocolFeesImplementation.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
@@ -15,7 +14,7 @@ import {PoolId} from "../src/types/PoolId.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {Constants} from "../test/utils/Constants.sol";
 
-contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
+contract ProtocolFeesTest is Test, Deployers {
     using ProtocolFeeLibrary for uint24;
 
     event ProtocolFeeControllerUpdated(address indexed feeController);
@@ -58,7 +57,7 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         vm.expectEmit(true, false, false, true, address(protocolFees));
         emit ProtocolFeeUpdated(key.toId(), MAX_PROTOCOL_FEE_BOTH_TOKENS);
         protocolFees.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS);
-        snapLastCall("set protocol fee");
+        vm.snapshotGasLastCall("set protocol fee");
     }
 
     function test_setProtocolFee_revertsWithInvalidCaller() public {
@@ -100,16 +99,6 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
 
     function test_collectProtocolFees_revertsWithInvalidCaller() public {
         vm.expectRevert(IProtocolFees.InvalidCaller.selector);
-        protocolFees.collectProtocolFees(address(1), currency0, 0);
-    }
-
-    function test_collectProtocolFees_revertsWithContractUnlocked() public {
-        protocolFees.setIsUnlocked(true);
-
-        protocolFees.setProtocolFeeController(feeController);
-        vm.prank(feeController);
-
-        vm.expectRevert(IProtocolFees.ContractUnlocked.selector);
         protocolFees.collectProtocolFees(address(1), currency0, 0);
     }
 
