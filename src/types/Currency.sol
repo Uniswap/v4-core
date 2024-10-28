@@ -28,8 +28,6 @@ function greaterThanOrEqualTo(Currency currency, Currency other) pure returns (b
 /// @title CurrencyLibrary
 /// @dev This library allows for transferring and holding native tokens and ERC20 tokens
 library CurrencyLibrary {
-    using CustomRevert for bytes4;
-
     /// @notice Additional context for ERC-7751 wrapped error when a native transfer fails
     error NativeTransferFailed();
 
