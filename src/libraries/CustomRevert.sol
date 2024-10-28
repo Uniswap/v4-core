@@ -79,6 +79,7 @@ library CustomRevert {
     }
 
     /// @notice bubble up the revert message returned by a call and revert with a wrapped ERC-7751 error
+    /// @dev this method can be vulnerable to revert data bombs
     function bubbleUpAndRevertWith(
         address revertingContract,
         bytes4 revertingFunctionSelector,
@@ -86,9 +87,8 @@ library CustomRevert {
     ) internal pure {
         bytes4 wrappedErrorSelector = WrappedError.selector;
         assembly ("memory-safe") {
-            let size := returndatasize()
             // Ensure the size of the revert data is a multiple of 32 bytes
-            let encodedDataSize := mul(div(add(size, 31), 32), 32)
+            let encodedDataSize := mul(div(add(returndatasize(), 31), 32), 32)
 
             let fmp := mload(0x40)
 
@@ -104,9 +104,9 @@ library CustomRevert {
             // offset additional context
             mstore(add(fmp, 0x64), add(0xa0, encodedDataSize))
             // size revert reason
-            mstore(add(fmp, 0x84), size)
+            mstore(add(fmp, 0x84), returndatasize())
             // revert reason
-            returndatacopy(add(fmp, 0xa4), 0, size)
+            returndatacopy(add(fmp, 0xa4), 0, returndatasize())
             // size additional context
             mstore(add(fmp, add(0xa4, encodedDataSize)), 0x04)
             // additional context
