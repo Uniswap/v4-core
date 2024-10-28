@@ -30,6 +30,7 @@ import {AmountHelpers} from "./utils/AmountHelpers.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
+import {TransientStateLibrary} from "../src/libraries/TransientStateLibrary.sol";
 import {Actions} from "../src/test/ActionsRouter.sol";
 
 contract PoolManagerTest is Test, Deployers {
@@ -38,6 +39,7 @@ contract PoolManagerTest is Test, Deployers {
     using SafeCast for *;
     using ProtocolFeeLibrary for uint24;
     using StateLibrary for IPoolManager;
+    using TransientStateLibrary for IPoolManager;
 
     event UnlockCallback();
     event ProtocolFeeControllerUpdated(address feeController);
@@ -980,6 +982,46 @@ contract PoolManagerTest is Test, Deployers {
     function test_burn_failsIfLocked() public {
         vm.expectRevert(IPoolManager.ManagerLocked.selector);
         manager.burn(address(this), key.currency0.toId(), 1);
+    }
+
+    function test_collectProtocolFees_locked_revertsWithProtocolFeeCurrencySynced() public noIsolate {
+        manager.setProtocolFeeController(address(this));
+        // currency1 is never native
+        manager.sync(key.currency1);
+        assertEq(Currency.unwrap(key.currency1), Currency.unwrap(manager.getSyncedCurrency()));
+        vm.expectRevert(IProtocolFees.ProtocolFeeCurrencySynced.selector);
+        manager.collectProtocolFees(address(this), key.currency1, 1);
+    }
+
+    function test_sync_locked_collectProtocolFees_unlocked_revertsWithProtocolFeeCurrencySynced() public noIsolate {
+        manager.setProtocolFeeController(address(actionsRouter));
+        manager.sync(key.currency1);
+        assertEq(Currency.unwrap(key.currency1), Currency.unwrap(manager.getSyncedCurrency()));
+
+        Actions[] memory actions = new Actions[](1);
+        bytes[] memory params = new bytes[](1);
+
+        actions[0] = Actions.COLLECT_PROTOCOL_FEES;
+        params[0] = abi.encode(address(this), key.currency1, 1);
+
+        vm.expectRevert(IProtocolFees.ProtocolFeeCurrencySynced.selector);
+        actionsRouter.executeActions(actions, params);
+    }
+
+    function test_collectProtocolFees_unlocked_revertsWithProtocolFeeCurrencySynced() public {
+        manager.setProtocolFeeController(address(actionsRouter));
+
+        Actions[] memory actions = new Actions[](2);
+        bytes[] memory params = new bytes[](2);
+
+        actions[0] = Actions.SYNC;
+        params[0] = abi.encode(key.currency1);
+
+        actions[1] = Actions.COLLECT_PROTOCOL_FEES;
+        params[1] = abi.encode(address(this), key.currency1, 1);
+
+        vm.expectRevert(IProtocolFees.ProtocolFeeCurrencySynced.selector);
+        actionsRouter.executeActions(actions, params);
     }
 
     function test_collectProtocolFees_ERC20_accumulateFees_gas() public {

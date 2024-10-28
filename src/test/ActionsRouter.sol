@@ -23,7 +23,8 @@ enum Actions {
     ASSERT_RESERVES_EQUALS,
     ASSERT_DELTA_EQUALS,
     ASSERT_NONZERO_DELTA_COUNT_EQUALS,
-    TRANSFER_FROM
+    TRANSFER_FROM,
+    COLLECT_PROTOCOL_FEES
 }
 // TODO: Add other actions as needed.
 // BURN,
@@ -80,6 +81,8 @@ contract ActionsRouter is IUnlockCallback, Test {
                 _assertNonzeroDeltaCountEquals(param);
             } else if (action == Actions.TRANSFER_FROM) {
                 _transferFrom(param);
+            } else if (action == Actions.COLLECT_PROTOCOL_FEES) {
+                _collectProtocolFees(param);
             }
         }
         return "";
@@ -158,5 +161,10 @@ contract ActionsRouter is IUnlockCallback, Test {
         (Currency currency, address from, address recipient, uint256 amount) =
             abi.decode(params, (Currency, address, address, uint256));
         MockERC20(Currency.unwrap(currency)).transferFrom(from, recipient, uint256(amount));
+    }
+
+    function _collectProtocolFees(bytes memory params) internal {
+        (address to, Currency currency, uint256 amount) = abi.decode(params, (address, Currency, uint256));
+        manager.collectProtocolFees(to, currency, amount);
     }
 }
