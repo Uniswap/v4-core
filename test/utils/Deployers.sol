@@ -74,8 +74,17 @@ contract Deployers is Test {
     uint160 hookPermissionCount = 14;
     uint160 clearAllHookPermissionsMask = ~uint160(0) << (hookPermissionCount);
 
+    modifier noIsolate() {
+        if (msg.sender != address(this)) {
+            (bool success,) = address(this).call(msg.data);
+            require(success);
+        } else {
+            _;
+        }
+    }
+
     function deployFreshManager() internal virtual {
-        manager = new PoolManager();
+        manager = new PoolManager(address(this));
     }
 
     function deployFreshManagerAndRouters() internal {

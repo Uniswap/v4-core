@@ -98,6 +98,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         _;
     }
 
+    constructor(address initialOwner) ProtocolFees(initialOwner) {}
+
     /// @inheritdoc IPoolManager
     function unlock(bytes calldata data) external override returns (bytes memory result) {
         if (Lock.isUnlocked()) AlreadyUnlocked.selector.revertWith();
@@ -273,7 +275,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function sync(Currency currency) external onlyWhenUnlocked {
+    function sync(Currency currency) external {
         // address(0) is used for the native currency
         if (currency.isAddressZero()) {
             // The reserves balance is not used for native settling, so we only need to reset the currency.

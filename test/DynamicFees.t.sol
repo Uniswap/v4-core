@@ -19,6 +19,7 @@ import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
+import {CustomRevert} from "../src/libraries/CustomRevert.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
 
 contract TestDynamicFees is Test, Deployers {
@@ -70,9 +71,11 @@ contract TestDynamicFees is Test, Deployers {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Hooks.Wrap__FailedHookCall.selector,
+                CustomRevert.WrappedError.selector,
                 address(dynamicFeesHooks),
-                abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee)
+                IHooks.afterInitialize.selector,
+                abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee),
+                abi.encodeWithSelector(Hooks.HookCallFailed.selector)
             )
         );
         manager.initialize(key, SQRT_PRICE_1_1);
@@ -108,9 +111,11 @@ contract TestDynamicFees is Test, Deployers {
         // afterInitialize will try to update the fee, and fail
         vm.expectRevert(
             abi.encodeWithSelector(
-                Hooks.Wrap__FailedHookCall.selector,
+                CustomRevert.WrappedError.selector,
                 address(dynamicFeesHooks),
-                abi.encodeWithSelector(IPoolManager.UnauthorizedDynamicLPFeeUpdate.selector)
+                IHooks.afterInitialize.selector,
+                abi.encodeWithSelector(IPoolManager.UnauthorizedDynamicLPFeeUpdate.selector),
+                abi.encodeWithSelector(Hooks.HookCallFailed.selector)
             )
         );
         manager.initialize(key, SQRT_PRICE_1_1);
@@ -127,11 +132,14 @@ contract TestDynamicFees is Test, Deployers {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Hooks.Wrap__FailedHookCall.selector,
+                CustomRevert.WrappedError.selector,
                 address(dynamicFeesHooks),
-                abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee)
+                IHooks.beforeSwap.selector,
+                abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee),
+                abi.encodeWithSelector(Hooks.HookCallFailed.selector)
             )
         );
+
         swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
     }
 

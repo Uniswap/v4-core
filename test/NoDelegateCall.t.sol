@@ -13,7 +13,7 @@ import {Deployers} from "./utils/Deployers.sol";
 contract TestDelegateCall is Test, Deployers {
     // override to use ProxyPoolManager
     function deployFreshManager() internal virtual override {
-        IPoolManager delegateManager = new PoolManager();
+        IPoolManager delegateManager = new PoolManager(address(this));
         manager = new ProxyPoolManager(address(delegateManager));
     }
 
