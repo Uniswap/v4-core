@@ -23,7 +23,7 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
     /// @inheritdoc IProtocolFees
     address public protocolFeeController;
 
-    constructor() Owned(msg.sender) {}
+    constructor(address initialOwner) Owned(initialOwner) {}
 
     /// @inheritdoc IProtocolFees
     function setProtocolFeeController(address controller) external onlyOwner {

@@ -98,6 +98,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         _;
     }
 
+    constructor(address initialOwner) ProtocolFees(initialOwner) {}
+
     /// @inheritdoc IPoolManager
     function unlock(bytes calldata data) external override returns (bytes memory result) {
         if (Lock.isUnlocked()) AlreadyUnlocked.selector.revertWith();

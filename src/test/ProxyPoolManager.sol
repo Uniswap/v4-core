@@ -44,7 +44,7 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
 
     address internal immutable _delegateManager;
 
-    constructor(address delegateManager) {
+    constructor(address delegateManager) ProtocolFees(msg.sender) {
         _delegateManager = delegateManager;
     }
 
