@@ -84,7 +84,7 @@ contract Deployers is Test {
     }
 
     function deployFreshManager() internal virtual {
-        manager = new PoolManager();
+        manager = new PoolManager(address(this));
     }
 
     function deployFreshManagerAndRouters() internal {
