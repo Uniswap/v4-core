@@ -124,7 +124,7 @@ contract PoolTest is Test {
         uint16 expectedProtocolFee = params.zeroForOne ? protocolFee0 : protocolFee1;
 
         uint24 _lpFee = params.lpFeeOverride.isOverride() ? params.lpFeeOverride.removeOverrideFlag() : lpFee;
-        uint24 swapFee = protocolFee == 0 ? _lpFee : expectedProtocolFee.calculateSwapFee(_lpFee);
+        uint24 swapFee = expectedProtocolFee == 0 ? _lpFee : expectedProtocolFee.calculateSwapFee(_lpFee);
 
         if (params.amountSpecified >= 0 && swapFee == MAX_LP_FEE) {
             vm.expectRevert(Pool.InvalidFeeForExactOut.selector);
