@@ -2,6 +2,7 @@
 pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
 import {IHooks} from "../../src/interfaces/IHooks.sol";
 import {Hooks} from "../../src/libraries/Hooks.sol";
 import {TickMath} from "../../src/libraries/TickMath.sol";
@@ -11,6 +12,7 @@ import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
 import {PoolId} from "../../src/types/PoolId.sol";
 import {Currency} from "../../src/types/Currency.sol";
 import {Deployers} from "../utils/Deployers.sol";
+import {Constants} from "../utils/Constants.sol";
 import {FixedPointMathLib} from "solmate/src/utils/FixedPointMathLib.sol";
 import {Pool} from "../../src/libraries/Pool.sol";
 import {TickBitmap} from "../../src/libraries/TickBitmap.sol";
@@ -18,6 +20,7 @@ import {FixedPoint128} from "../../src/libraries/FixedPoint128.sol";
 
 import {StateLibrary} from "../../src/libraries/StateLibrary.sol";
 import {Fuzzers} from "../../src/test/Fuzzers.sol";
+import {MockHooks} from "../../src/test/MockHooks.sol";
 
 contract StateLibraryTest is Test, Deployers, Fuzzers {
     using FixedPointMathLib for uint256;
@@ -29,8 +32,13 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
         Deployers.deployFreshManagerAndRouters();
         (currency0, currency1) = Deployers.deployMintAndApprove2Currencies();
 
+        // create hooks
+        MockHooks impl = new MockHooks();
+        vm.etch(Constants.ALL_HOOKS, address(impl).code);
+        MockHooks mockHooks = MockHooks(Constants.ALL_HOOKS);
+
         // Create the pool
-        key = PoolKey(currency0, currency1, 3000, 60, IHooks(address(0x0)));
+        key = PoolKey(currency0, currency1, 3000, 60, mockHooks);
         poolId = key.toId();
         manager.initialize(key, SQRT_PRICE_1_1);
     }
@@ -497,10 +505,10 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
         IPoolManager.ModifyLiquidityParams memory paramsA,
         IPoolManager.ModifyLiquidityParams memory paramsB
     ) public {
-        (IPoolManager.ModifyLiquidityParams memory _paramsA) =
+        IPoolManager.ModifyLiquidityParams memory _paramsA =
             Fuzzers.createFuzzyLiquidityParams(key, paramsA, SQRT_PRICE_1_1);
 
-        (IPoolManager.ModifyLiquidityParams memory _paramsB) =
+        IPoolManager.ModifyLiquidityParams memory _paramsB =
             Fuzzers.createFuzzyLiquidityParams(key, paramsB, SQRT_PRICE_1_1);
 
         // Assume there are no overlapping positions
@@ -523,5 +531,15 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
         );
         uint128 liquidityB = StateLibrary.getPositionLiquidity(manager, poolId, positionIdB);
         assertEq(liquidityB, uint128(uint256(_paramsB.liquidityDelta)));
+    }
+
+    function test_getPoolKey() public {
+        PoolKey memory fetchedKey = StateLibrary.getPoolKey(manager, poolId);
+        vm.snapshotGasLastCall("extsload getPoolKey");
+        assertEq(Currency.unwrap(key.currency0), Currency.unwrap(fetchedKey.currency0));
+        assertEq(Currency.unwrap(key.currency1), Currency.unwrap(fetchedKey.currency1));
+        assertEq(key.fee, fetchedKey.fee);
+        assertEq(key.tickSpacing, fetchedKey.tickSpacing);
+        assertEq(address(key.hooks), address(fetchedKey.hooks));
     }
 }

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {PoolId} from "../types/PoolId.sol";
+import {PoolKey} from "../types/PoolKey.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {Position} from "./Position.sol";
 
@@ -26,6 +27,9 @@ library StateLibrary {
 
     /// @notice index of Position.State mapping in Pool.State: mapping(bytes32 => Position.State) positions;
     uint256 public constant POSITIONS_OFFSET = 6;
+
+    /// @notice index of key in Pool.State
+    uint256 public constant KEY_OFFSET = 7;
 
     /**
      * @notice Get Slot0 of the pool: sqrtPriceX96, tick, protocolFee, lpFee
@@ -315,6 +319,37 @@ library StateLibrary {
                 feeGrowthInside0X128 = feeGrowthGlobal0X128 - lowerFeeGrowthOutside0X128 - upperFeeGrowthOutside0X128;
                 feeGrowthInside1X128 = feeGrowthGlobal1X128 - lowerFeeGrowthOutside1X128 - upperFeeGrowthOutside1X128;
             }
+        }
+    }
+
+    /**
+     * @notice Get PoolKey of the pool: currency0, currency1, fee, tickSpacing, hooks
+     * @dev Corresponds to pools[poolId].key
+     * @param manager The pool manager contract.
+     * @param poolId The ID of the pool.
+     * @return key The PoolKey struct corresponding to poolId
+     */
+    function getPoolKey(IPoolManager manager, PoolId poolId) internal view returns (PoolKey memory key) {
+        // slot key of Pool.State value: `pools[poolId]`
+        bytes32 stateSlot = _getPoolStateSlot(poolId);
+
+        // Pool.State: `PoolId key`
+        bytes32 slot = bytes32(uint256(stateSlot) + KEY_OFFSET);
+        // read all 3 words of the PoolId struct
+        bytes32[] memory data = manager.extsload(slot, 3);
+        assembly ("memory-safe") {
+            mstore(key, and(mload(add(data, 32)), 0xffffffffffffffffffffffffffffffffffffffff)) // first slot currency0
+
+            // second slot
+            // 48bits        |24 bits     |24 bits |160 bits
+            // 0x000000000000|000000      |000000  |0000000000000000000000000000000000000000
+            // --------------|tickSpacing |fee     |currency1
+            let secondWord := mload(add(data, 64))
+            mstore(add(key, 32), and(secondWord, 0xffffffffffffffffffffffffffffffffffffffff))
+            mstore(add(key, 64), and(shr(160, secondWord), 0xffffff)) // fee
+            mstore(add(key, 96), and(shr(184, secondWord), 0xffffff)) // tickSpacing
+
+            mstore(add(key, 128), and(mload(add(data, 96)), 0xffffffffffffffffffffffffffffffffffffffff)) // third slot hooks
         }
     }
 

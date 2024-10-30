@@ -125,13 +125,11 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         }
         if (!key.hooks.isValidHookAddress(key.fee)) Hooks.HookAddressNotValid.selector.revertWith(address(key.hooks));
 
-        uint24 lpFee = key.fee.getInitialLPFee();
-
         key.hooks.beforeInitialize(key, sqrtPriceX96);
 
         PoolId id = key.toId();
 
-        tick = _pools[id].initialize(sqrtPriceX96, lpFee);
+        tick = _pools[id].initialize(key, sqrtPriceX96);
 
         // event is emitted before the afterInitialize call to ensure events are always emitted in order
         // emit all details of a pool key. poolkeys are not saved in storage and must always be provided by the caller

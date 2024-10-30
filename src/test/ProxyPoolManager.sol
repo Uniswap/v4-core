@@ -79,13 +79,11 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
         }
         if (!key.hooks.isValidHookAddress(key.fee)) Hooks.HookAddressNotValid.selector.revertWith(address(key.hooks));
 
-        uint24 lpFee = key.fee.getInitialLPFee();
-
         key.hooks.beforeInitialize(key, sqrtPriceX96);
 
         PoolId id = key.toId();
 
-        tick = _pools[id].initialize(sqrtPriceX96, lpFee);
+        tick = _pools[id].initialize(key, sqrtPriceX96);
 
         key.hooks.afterInitialize(key, sqrtPriceX96, tick);
 

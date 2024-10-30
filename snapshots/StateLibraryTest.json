@@ -2,6 +2,7 @@
   "extsload getFeeGrowthGlobals": "774",
   "extsload getFeeGrowthInside": "375",
   "extsload getLiquidity": "375",
+  "extsload getPoolKey": "6949",
   "extsload getPositionInfo": "949",
   "extsload getPositionLiquidity": "375",
   "extsload getSlot0": "375",

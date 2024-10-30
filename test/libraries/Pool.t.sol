@@ -11,10 +11,13 @@ import {TickBitmap} from "../../src/libraries/TickBitmap.sol";
 import {LiquidityAmounts} from "../../test/utils/LiquidityAmounts.sol";
 import {Constants} from "../../test/utils/Constants.sol";
 import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
+import {Currency} from "../../src/types/Currency.sol";
+import {PoolKey} from "../../src/types/PoolKey.sol";
 import {Slot0} from "../../src/types/Slot0.sol";
 import {SafeCast} from "../../src/libraries/SafeCast.sol";
 import {ProtocolFeeLibrary} from "../../src/libraries/ProtocolFeeLibrary.sol";
 import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
+import {IHooks} from "../../src/interfaces/IHooks.sol";
 
 contract PoolTest is Test {
     using Pool for Pool.State;
@@ -26,12 +29,15 @@ contract PoolTest is Test {
     uint24 constant MAX_PROTOCOL_FEE = ProtocolFeeLibrary.MAX_PROTOCOL_FEE; // 0.1%
     uint24 constant MAX_LP_FEE = LPFeeLibrary.MAX_LP_FEE; // 100%
 
-    function test_pool_initialize(uint160 sqrtPriceX96, uint24 swapFee) public {
+    function test_pool_initialize(PoolKey memory key, uint160 sqrtPriceX96) public {
         if (sqrtPriceX96 < TickMath.MIN_SQRT_PRICE || sqrtPriceX96 >= TickMath.MAX_SQRT_PRICE) {
             vm.expectRevert(abi.encodeWithSelector(TickMath.InvalidSqrtPrice.selector, sqrtPriceX96));
-            state.initialize(sqrtPriceX96, swapFee);
+            state.initialize(key, sqrtPriceX96);
+        } else if (key.fee > MAX_LP_FEE) {
+            vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, key.fee));
+            state.initialize(key, sqrtPriceX96);
         } else {
-            state.initialize(sqrtPriceX96, swapFee);
+            state.initialize(key, sqrtPriceX96);
             assertEq(state.slot0.sqrtPriceX96(), sqrtPriceX96);
             assertEq(state.slot0.protocolFee(), 0);
             assertEq(state.slot0.tick(), TickMath.getTickAtSqrtPrice(sqrtPriceX96));
@@ -46,7 +52,9 @@ contract PoolTest is Test {
         // Assumptions tested in PoolManager.t.sol
         params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
 
-        test_pool_initialize(sqrtPriceX96, lpFee);
+        PoolKey memory key =
+            PoolKey(Currency.wrap(address(0)), Currency.wrap(address(1)), lpFee, params.tickSpacing, IHooks(address(0)));
+        test_pool_initialize(key, sqrtPriceX96);
 
         if (params.tickLower >= params.tickUpper) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TicksMisordered.selector, params.tickLower, params.tickUpper));
@@ -99,7 +107,7 @@ contract PoolTest is Test {
         lpFee = uint24(bound(lpFee, 0, MAX_LP_FEE));
         protocolFee0 = uint16(bound(protocolFee0, 0, MAX_PROTOCOL_FEE));
         protocolFee1 = uint16(bound(protocolFee1, 0, MAX_PROTOCOL_FEE));
-        uint24 protocolFee = protocolFee1 << 12 | protocolFee0;
+        uint24 protocolFee = (protocolFee1 << 12) | protocolFee0;
 
         // initialize and add liquidity
         test_modifyLiquidity(

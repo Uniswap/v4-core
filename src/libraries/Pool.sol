@@ -10,6 +10,7 @@ import {TickMath} from "./TickMath.sol";
 import {SqrtPriceMath} from "./SqrtPriceMath.sol";
 import {SwapMath} from "./SwapMath.sol";
 import {BalanceDelta, toBalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
+import {PoolKey} from "../types/PoolKey.sol";
 import {Slot0} from "../types/Slot0.sol";
 import {ProtocolFeeLibrary} from "./ProtocolFeeLibrary.sol";
 import {LiquidityMath} from "./LiquidityMath.sol";
@@ -85,6 +86,7 @@ library Pool {
         mapping(int24 tick => TickInfo) ticks;
         mapping(int16 wordPos => uint256) tickBitmap;
         mapping(bytes32 positionKey => Position.State) positions;
+        PoolKey key;
     }
 
     /// @dev Common checks for valid tick inputs.
@@ -94,13 +96,15 @@ library Pool {
         if (tickUpper > TickMath.MAX_TICK) TickUpperOutOfBounds.selector.revertWith(tickUpper);
     }
 
-    function initialize(State storage self, uint160 sqrtPriceX96, uint24 lpFee) internal returns (int24 tick) {
+    function initialize(State storage self, PoolKey memory key, uint160 sqrtPriceX96) internal returns (int24 tick) {
         if (self.slot0.sqrtPriceX96() != 0) PoolAlreadyInitialized.selector.revertWith();
 
         tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
 
+        uint24 lpFee = key.fee.getInitialLPFee();
         // the initial protocolFee is 0 so doesn't need to be set
         self.slot0 = Slot0.wrap(bytes32(0)).setSqrtPriceX96(sqrtPriceX96).setTick(tick).setLpFee(lpFee);
+        self.key = key;
     }
 
     function setProtocolFee(State storage self, uint24 protocolFee) internal {
