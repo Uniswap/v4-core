@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 /// @notice Contains methods that perform common math functions but do not do any overflow or underflow checks
 library UnsafeMath {
     /// @notice Returns ceil(x / y)
-    /// @dev division by 0 has unspecified behavior, and must be checked externally
+    /// @dev division by 0 will return 0, and should be checked externally
     /// @param x The dividend
     /// @param y The divisor
     /// @return z The quotient, ceil(x / y)
@@ -16,7 +16,7 @@ library UnsafeMath {
     }
 
     /// @notice Calculates floor(a×b÷denominator)
-    /// @dev division by 0 has unspecified behavior, and must be checked externally
+    /// @dev division by 0 will return 0, and should be checked externally
     /// @param a The multiplicand
     /// @param b The multiplier
     /// @param denominator The divisor

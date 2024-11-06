@@ -386,8 +386,11 @@ library Pool {
                 unchecked {
                     // step.amountIn does not include the swap fee, as it's already been taken from it,
                     // so add it back to get the total amountIn and use that to calculate the amount of fees owed to the protocol
-                    // this line cannot overflow due to limits on the size of protocolFee and params.amountSpecified
-                    uint256 delta = (step.amountIn + step.feeAmount) * protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
+                    // cannot overflow due to limits on the size of protocolFee and params.amountSpecified
+                    // this rounds down to favor LPs over the protocol
+                    uint256 delta = (swapFee == protocolFee)
+                        ? step.feeAmount // lp fee is 0, so the entire fee is owed to the protocol instead
+                        : (step.amountIn + step.feeAmount) * protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
                     // subtract it from the total fee and add it to the protocol fee
                     step.feeAmount -= delta;
                     amountToProtocol += delta;
@@ -535,7 +538,8 @@ library Pool {
             }
         }
 
-        // when the lower (upper) tick is crossed left to right (right to left), liquidity must be added (removed)
+        // when the lower (upper) tick is crossed left to right, liquidity must be added (removed)
+        // when the lower (upper) tick is crossed right to left, liquidity must be removed (added)
         int128 liquidityNet = upper ? liquidityNetBefore - liquidityDelta : liquidityNetBefore + liquidityDelta;
         assembly ("memory-safe") {
             // liquidityGrossAfter and liquidityNet are packed in the first slot of `info`
@@ -561,6 +565,7 @@ library Pool {
     function tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) internal pure returns (uint128 result) {
         // Equivalent to:
         // int24 minTick = (TickMath.MIN_TICK / tickSpacing);
+        // if (TickMath.MIN_TICK  % tickSpacing != 0) minTick--;
         // int24 maxTick = (TickMath.MAX_TICK / tickSpacing);
         // uint24 numTicks = maxTick - minTick + 1;
         // return type(uint128).max / numTicks;
