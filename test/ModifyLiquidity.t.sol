@@ -3,7 +3,6 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {Deployers} from "./utils/Deployers.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolKey} from "src/types/PoolKey.sol";
 import {IPoolManager} from "src/interfaces/IPoolManager.sol";
 import {IHooks} from "src/interfaces/IHooks.sol";
@@ -21,7 +20,7 @@ import {TickMath} from "src/libraries/TickMath.sol";
 import {toBalanceDelta} from "src/types/BalanceDelta.sol";
 import {Logger} from "./utils/Logger.sol";
 
-contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers, GasSnapshot {
+contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers {
     using StateLibrary for IPoolManager;
 
     PoolKey simpleKey; // vanilla pool key
@@ -305,12 +304,12 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
 
     function test_gas_modifyLiquidity_newPosition() public {
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
-        snapLastCall("create new liquidity to a position with salt");
+        vm.snapshotGasLastCall("create new liquidity to a position with salt");
     }
 
     function test_gas_modifyLiquidity_updateSamePosition_withSalt() public {
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
-        snapLastCall("add liquidity to already existing position with salt");
+        vm.snapshotGasLastCall("add liquidity to already existing position with salt");
     }
 }

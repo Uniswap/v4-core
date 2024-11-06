@@ -8,7 +8,6 @@ import {Currency} from "../types/Currency.sol";
 import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {StateLibrary} from "../libraries/StateLibrary.sol";
 import {TransientStateLibrary} from "../libraries/TransientStateLibrary.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 
 // Supported Actions.
 enum Actions {
@@ -24,7 +23,8 @@ enum Actions {
     ASSERT_RESERVES_EQUALS,
     ASSERT_DELTA_EQUALS,
     ASSERT_NONZERO_DELTA_COUNT_EQUALS,
-    TRANSFER_FROM
+    TRANSFER_FROM,
+    COLLECT_PROTOCOL_FEES
 }
 // TODO: Add other actions as needed.
 // BURN,
@@ -34,7 +34,7 @@ enum Actions {
 
 /// @notice A router that handles an arbitrary input of actions.
 /// TODO: Can continue to add functions per action.
-contract ActionsRouter is IUnlockCallback, Test, GasSnapshot {
+contract ActionsRouter is IUnlockCallback, Test {
     using StateLibrary for IPoolManager;
     using TransientStateLibrary for IPoolManager;
 
@@ -81,6 +81,8 @@ contract ActionsRouter is IUnlockCallback, Test, GasSnapshot {
                 _assertNonzeroDeltaCountEquals(param);
             } else if (action == Actions.TRANSFER_FROM) {
                 _transferFrom(param);
+            } else if (action == Actions.COLLECT_PROTOCOL_FEES) {
+                _collectProtocolFees(param);
             }
         }
         return "";
@@ -131,7 +133,7 @@ contract ActionsRouter is IUnlockCallback, Test, GasSnapshot {
             abi.decode(params, (Currency, uint256, bool, string));
 
         manager.clear(currency, amount);
-        if (measureGas) snapLastCall(gasSnapName);
+        if (measureGas) vm.snapshotGasLastCall(gasSnapName);
     }
 
     function _assertBalanceEquals(bytes memory params) internal view {
@@ -159,5 +161,10 @@ contract ActionsRouter is IUnlockCallback, Test, GasSnapshot {
         (Currency currency, address from, address recipient, uint256 amount) =
             abi.decode(params, (Currency, address, address, uint256));
         MockERC20(Currency.unwrap(currency)).transferFrom(from, recipient, uint256(amount));
+    }
+
+    function _collectProtocolFees(bytes memory params) internal {
+        (address to, Currency currency, uint256 amount) = abi.decode(params, (address, Currency, uint256));
+        manager.collectProtocolFees(to, currency, amount);
     }
 }

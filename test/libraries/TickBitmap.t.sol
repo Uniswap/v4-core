@@ -3,11 +3,10 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {GasSnapshot} from "lib/forge-gas-snapshot/src/GasSnapshot.sol";
 import {TickBitmap} from "../../src/libraries/TickBitmap.sol";
 import {TickMath} from "../../src/libraries/TickMath.sol";
 
-contract TickBitmapTest is Test, GasSnapshot {
+contract TickBitmapTest is Test {
     using TickBitmap for mapping(int16 => uint256);
 
     int24 constant INITIALIZED_TICK = 70;
@@ -95,21 +94,21 @@ contract TickBitmapTest is Test, GasSnapshot {
     }
 
     function test_flipTick_flippingFirstTickInWordToInitialized_gas() public {
-        snapStart("flipTick_flippingFirstTickInWordToInitialized");
+        vm.startSnapshotGas("flipTick_flippingFirstTickInWordToInitialized");
         flipTick(TICK_IN_UNINITIALZIED_WORD);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_flipTick_flippingSecondTickInWordToInitialized_gas() public {
-        snapStart("flipTick_flippingSecondTickInWordToInitialized");
+        vm.startSnapshotGas("flipTick_flippingSecondTickInWordToInitialized");
         flipTick(INITIALIZED_TICK + 1);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_flipTick_flippingATickThatResultsInDeletingAWord_gas() public {
-        snapStart("flipTick_flippingATickThatResultsInDeletingAWord");
+        vm.startSnapshotGas("flipTick_flippingATickThatResultsInDeletingAWord");
         flipTick(SOLO_INITIALIZED_TICK_IN_WORD);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_fuzz_flipTick(int24 tick, int24 tickSpacing) public {
@@ -198,21 +197,21 @@ contract TickBitmapTest is Test, GasSnapshot {
     }
 
     function test_nextInitializedTickWithinOneWord_lteFalse_onBoundary_gas() public {
-        snapStart("nextInitializedTickWithinOneWord_lteFalse_onBoundary");
+        vm.startSnapshotGas("nextInitializedTickWithinOneWord_lteFalse_onBoundary");
         bitmap.nextInitializedTickWithinOneWord(255, 1, false);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_nextInitializedTickWithinOneWord_lteFalse_justBelowBoundary_gas() public {
-        snapStart("nextInitializedTickWithinOneWord_lteFalse_justBelowBoundary");
+        vm.startSnapshotGas("nextInitializedTickWithinOneWord_lteFalse_justBelowBoundary");
         bitmap.nextInitializedTickWithinOneWord(254, 1, false);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_nextInitializedTickWithinOneWord_lteFalse_forEntireWord_gas() public {
-        snapStart("nextInitializedTickWithinOneWord_lteFalse_forEntireWord");
+        vm.startSnapshotGas("nextInitializedTickWithinOneWord_lteFalse_forEntireWord");
         bitmap.nextInitializedTickWithinOneWord(768, 1, false);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_nextInitializedTickWithinOneWord_lteTrue_returnsSameTickIfInitialized() public view {
@@ -277,21 +276,21 @@ contract TickBitmapTest is Test, GasSnapshot {
     }
 
     function test_nextInitializedTickWithinOneWord_lteTrue_onBoundary_gas() public {
-        snapStart("nextInitializedTickWithinOneWord_lteTrue_onBoundary_gas");
+        vm.startSnapshotGas("nextInitializedTickWithinOneWord_lteTrue_onBoundary_gas");
         bitmap.nextInitializedTickWithinOneWord(256, 1, true);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_nextInitializedTickWithinOneWord_lteTrue_justBelowBoundary_gas() public {
-        snapStart("nextInitializedTickWithinOneWord_lteTrue_justBelowBoundary");
+        vm.startSnapshotGas("nextInitializedTickWithinOneWord_lteTrue_justBelowBoundary");
         bitmap.nextInitializedTickWithinOneWord(255, 1, true);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_nextInitializedTickWithinOneWord_lteTrue_forEntireWord_gas() public {
-        snapStart("nextInitializedTickWithinOneWord_lteTrue_forEntireWord");
+        vm.startSnapshotGas("nextInitializedTickWithinOneWord_lteTrue_forEntireWord");
         bitmap.nextInitializedTickWithinOneWord(1024, 1, true);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_fuzz_nextInitializedTickWithinOneWord(int24 tick, bool lte) public view {

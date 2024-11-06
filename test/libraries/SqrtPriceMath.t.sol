@@ -3,11 +3,10 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {SqrtPriceMath} from "../../src/libraries/SqrtPriceMath.sol";
 import {Constants} from "../../test/utils/Constants.sol";
 
-contract SqrtPriceMathTest is Test, GasSnapshot {
+contract SqrtPriceMathTest is Test {
     function test_getNextSqrtPriceFromInput_revertsIfPriceIsZero() public {
         vm.expectRevert(SqrtPriceMath.InvalidPriceOrLiquidity.selector);
         SqrtPriceMath.getNextSqrtPriceFromInput(0, 1, 0.1 ether, false);
@@ -97,17 +96,17 @@ contract SqrtPriceMathTest is Test, GasSnapshot {
     function test_getNextSqrtPriceFromInput_zeroForOneEqualsTrueGas() public {
         uint160 sqrtP = Constants.SQRT_PRICE_1_1;
 
-        snapStart("getNextSqrtPriceFromInput_zeroForOneEqualsTrueGas");
+        vm.startSnapshotGas("getNextSqrtPriceFromInput_zeroForOneEqualsTrueGas");
         SqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, uint128(1 ether), 0.1 ether, true);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_getNextSqrtPriceFromInput_zeroForOneEqualsFalseGas() public {
         uint160 sqrtP = Constants.SQRT_PRICE_1_1;
 
-        snapStart("getNextSqrtPriceFromInput_zeroForOneEqualsFalseGas");
+        vm.startSnapshotGas("getNextSqrtPriceFromInput_zeroForOneEqualsFalseGas");
         SqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, uint128(1 ether), 0.1 ether, false);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_getNextSqrtPriceFromOutput_revertsIfPriceIsZero() public {
@@ -227,17 +226,17 @@ contract SqrtPriceMathTest is Test, GasSnapshot {
     function test_getNextSqrtPriceFromOutput_zeroForOneEqualsTrueGas() public {
         uint160 sqrtP = Constants.SQRT_PRICE_1_1;
 
-        snapStart("getNextSqrtPriceFromOutput_zeroForOneEqualsTrueGas");
+        vm.startSnapshotGas("getNextSqrtPriceFromOutput_zeroForOneEqualsTrueGas");
         SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, uint128(1 ether), 0.1 ether, true);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_getNextSqrtPriceFromOutput_zeroForOneEqualsFalseGas() public {
         uint160 sqrtP = Constants.SQRT_PRICE_1_1;
 
-        snapStart("getNextSqrtPriceFromOutput_zeroForOneEqualsFalseGas");
+        vm.startSnapshotGas("getNextSqrtPriceFromOutput_zeroForOneEqualsFalseGas");
         SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, uint128(1 ether), 0.1 ether, false);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_getAmount0Delta_returns0IfLiquidityIs0() public pure {
@@ -285,15 +284,15 @@ contract SqrtPriceMathTest is Test, GasSnapshot {
     }
 
     function test_getAmount0Delta_gasCostForAmount0WhereRoundUpIsTrue() public {
-        snapStart("getAmount0Delta_gasCostForAmount0WhereRoundUpIsTrue");
+        vm.startSnapshotGas("getAmount0Delta_gasCostForAmount0WhereRoundUpIsTrue");
         SqrtPriceMath.getAmount0Delta(Constants.SQRT_PRICE_121_100, Constants.SQRT_PRICE_1_1, uint128(1 ether), true);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_getAmount0Delta_gasCostForAmount0WhereRoundUpIsFalse() public {
-        snapStart("getAmount0Delta_gasCostForAmount0WhereRoundUpIsFalse");
+        vm.startSnapshotGas("getAmount0Delta_gasCostForAmount0WhereRoundUpIsFalse");
         SqrtPriceMath.getAmount0Delta(Constants.SQRT_PRICE_121_100, Constants.SQRT_PRICE_1_1, uint128(1 ether), false);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_getAmount1Delta_returns0IfLiquidityIs0() public pure {
@@ -323,15 +322,15 @@ contract SqrtPriceMathTest is Test, GasSnapshot {
     }
 
     function test_getAmount1Delta_gasCostForAmount1WhereRoundUpIsTrue() public {
-        snapStart("getAmount1Delta_gasCostForAmount1WhereRoundUpIsTrue");
+        vm.startSnapshotGas("getAmount1Delta_gasCostForAmount1WhereRoundUpIsTrue");
         SqrtPriceMath.getAmount1Delta(Constants.SQRT_PRICE_121_100, Constants.SQRT_PRICE_1_1, uint128(1 ether), true);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_getAmount1Delta_gasCostForAmount1WhereRoundUpIsFalse() public {
-        snapStart("getAmount1Delta_gasCostForAmount1WhereRoundUpIsFalse");
+        vm.startSnapshotGas("getAmount1Delta_gasCostForAmount1WhereRoundUpIsFalse");
         SqrtPriceMath.getAmount1Delta(Constants.SQRT_PRICE_121_100, Constants.SQRT_PRICE_1_1, uint128(1 ether), false);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_swapComputation_sqrtPTimessqrtQOverflows() public pure {

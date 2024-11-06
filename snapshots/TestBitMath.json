@@ -1,0 +1,8 @@
+{
+  "BitMathLeastSignificantBitMaxUint128": "648",
+  "BitMathLeastSignificantBitMaxUint256": "648",
+  "BitMathLeastSignificantBitSmallNumber": "25",
+  "BitMathMostSignificantBitMaxUint128": "648",
+  "BitMathMostSignificantBitMaxUint256": "648",
+  "BitMathMostSignificantBitSmallNumber": "14"
+}

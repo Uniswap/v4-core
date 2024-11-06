@@ -15,9 +15,8 @@ import {Slot0} from "../../src/types/Slot0.sol";
 import {SafeCast} from "../../src/libraries/SafeCast.sol";
 import {ProtocolFeeLibrary} from "../../src/libraries/ProtocolFeeLibrary.sol";
 import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 
-contract PoolTest is Test, GasSnapshot {
+contract PoolTest is Test {
     using Pool for Pool.State;
     using LPFeeLibrary for uint24;
     using ProtocolFeeLibrary for *;
@@ -120,9 +119,12 @@ contract PoolTest is Test, GasSnapshot {
         assertEq(slot0.protocolFee(), 0);
         slot0 = slot0.setProtocolFee(protocolFee);
         assertEq(slot0.protocolFee(), protocolFee);
+        state.slot0 = slot0;
+
+        uint16 expectedProtocolFee = params.zeroForOne ? protocolFee0 : protocolFee1;
 
         uint24 _lpFee = params.lpFeeOverride.isOverride() ? params.lpFeeOverride.removeOverrideFlag() : lpFee;
-        uint24 swapFee = protocolFee == 0 ? _lpFee : uint16(protocolFee).calculateSwapFee(_lpFee);
+        uint24 swapFee = expectedProtocolFee == 0 ? _lpFee : expectedProtocolFee.calculateSwapFee(_lpFee);
 
         if (params.amountSpecified >= 0 && swapFee == MAX_LP_FEE) {
             vm.expectRevert(Pool.InvalidFeeForExactOut.selector);

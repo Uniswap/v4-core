@@ -1,0 +1,9 @@
+{
+  "ERC6909Claims approve": "46323",
+  "ERC6909Claims burn": "29389",
+  "ERC6909Claims mint": "46603",
+  "ERC6909Claims transfer": "51756",
+  "ERC6909Claims transferFrom as operator": "54437",
+  "ERC6909Claims transferFrom with approval": "59939",
+  "ERC6909Claims transferFrom with infinite approval": "56770"
+}

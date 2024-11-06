@@ -5,3 +5,4 @@ lib/
 cache/
 *.sol
 dist/
+snapshots/

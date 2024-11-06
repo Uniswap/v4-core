@@ -3,7 +3,6 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {stdError} from "forge-std/StdError.sol";
-import {GasSnapshot} from "../lib/forge-gas-snapshot/src/GasSnapshot.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
@@ -22,7 +21,7 @@ contract LiquidityMathRef {
     }
 }
 
-contract TickTest is Test, GasSnapshot {
+contract TickTest is Test {
     using Pool for Pool.State;
 
     int24 constant LOW_TICK_SPACING = 10;
@@ -163,21 +162,21 @@ contract TickTest is Test, GasSnapshot {
     }
 
     function testTick_tickSpacingToMaxLiquidityPerTick_gasCostMinTickSpacing() public {
-        snapStart("tickSpacingToMaxLiquidityPerTick_gasCostMinTickSpacing");
+        vm.startSnapshotGas("tickSpacingToMaxLiquidityPerTick_gasCostMinTickSpacing");
         tickSpacingToMaxLiquidityPerTick(TickMath.MIN_TICK_SPACING);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function testTick_tickSpacingToMaxLiquidityPerTick_gasCost60TickSpacing() public {
-        snapStart("tickSpacingToMaxLiquidityPerTick_gasCost60TickSpacing");
+        vm.startSnapshotGas("tickSpacingToMaxLiquidityPerTick_gasCost60TickSpacing");
         tickSpacingToMaxLiquidityPerTick(60);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function testTick_tickSpacingToMaxLiquidityPerTick_gasCostMaxTickSpacing() public {
-        snapStart("tickSpacingToMaxLiquidityPerTick_gasCostMaxTickSpacing");
+        vm.startSnapshotGas("tickSpacingToMaxLiquidityPerTick_gasCostMaxTickSpacing");
         tickSpacingToMaxLiquidityPerTick(TickMath.MAX_TICK_SPACING);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function testTick_getFeeGrowthInside_returnsAllForTwoUninitializedTicksIfTickIsInside() public {

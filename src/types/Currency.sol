@@ -28,15 +28,11 @@ function greaterThanOrEqualTo(Currency currency, Currency other) pure returns (b
 /// @title CurrencyLibrary
 /// @dev This library allows for transferring and holding native tokens and ERC20 tokens
 library CurrencyLibrary {
-    using CustomRevert for bytes4;
+    /// @notice Additional context for ERC-7751 wrapped error when a native transfer fails
+    error NativeTransferFailed();
 
-    /// @notice Thrown when a native transfer fails
-    /// @param reason bubbled up revert reason
-    error Wrap__NativeTransferFailed(address recipient, bytes reason);
-
-    /// @notice Thrown when an ERC20 transfer fails
-    /// @param reason bubbled up revert reason
-    error Wrap__ERC20TransferFailed(address token, bytes reason);
+    /// @notice Additional context for ERC-7751 wrapped error when an ERC20 transfer fails
+    error ERC20TransferFailed();
 
     /// @notice A constant to represent the native currency
     Currency public constant ADDRESS_ZERO = Currency.wrap(address(0));
@@ -52,7 +48,9 @@ library CurrencyLibrary {
                 success := call(gas(), to, amount, 0, 0, 0, 0)
             }
             // revert with NativeTransferFailed, containing the bubbled up error as an argument
-            if (!success) Wrap__NativeTransferFailed.selector.bubbleUpAndRevertWith(to);
+            if (!success) {
+                CustomRevert.bubbleUpAndRevertWith(to, bytes4(0), NativeTransferFailed.selector);
+            }
         } else {
             assembly ("memory-safe") {
                 // Get a pointer to some free memory.
@@ -81,7 +79,11 @@ library CurrencyLibrary {
                 mstore(add(fmp, 0x40), 0) // 4 bytes of `amount` were stored here
             }
             // revert with ERC20TransferFailed, containing the bubbled up error as an argument
-            if (!success) Wrap__ERC20TransferFailed.selector.bubbleUpAndRevertWith(Currency.unwrap(currency));
+            if (!success) {
+                CustomRevert.bubbleUpAndRevertWith(
+                    Currency.unwrap(currency), IERC20Minimal.transfer.selector, ERC20TransferFailed.selector
+                );
+            }
         }
     }
 

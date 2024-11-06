@@ -5,10 +5,9 @@ import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {SqrtPriceMath} from "../../src/libraries/SqrtPriceMath.sol";
 import {SwapMath} from "../../src/libraries/SwapMath.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {Constants} from "../utils/Constants.sol";
 
-contract SwapMathTest is Test, GasSnapshot {
+contract SwapMathTest is Test {
     function test_fuzz_getSqrtPriceTarget(bool zeroForOne, uint160 sqrtPriceNextX96, uint160 sqrtPriceLimitX96)
         public
         pure
@@ -241,50 +240,50 @@ contract SwapMathTest is Test, GasSnapshot {
     }
 
     function test_computeSwapStep_swapOneForZero_exactInCapped() public {
-        snapStart("SwapMath_oneForZero_exactInCapped");
+        vm.startSnapshotGas("SwapMath_oneForZero_exactInCapped");
         SwapMath.computeSwapStep(Constants.SQRT_PRICE_1_1, Constants.SQRT_PRICE_101_100, 2 ether, (1 ether) * -1, 600);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_computeSwapStep_swapZeroForOne_exactInCapped() public {
-        snapStart("SwapMath_zeroForOne_exactInCapped");
+        vm.startSnapshotGas("SwapMath_zeroForOne_exactInCapped");
         SwapMath.computeSwapStep(Constants.SQRT_PRICE_1_1, Constants.SQRT_PRICE_99_100, 2 ether, (1 ether) * -1, 600);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_computeSwapStep_swapOneForZero_exactOutCapped() public {
-        snapStart("SwapMath_oneForZero_exactOutCapped");
+        vm.startSnapshotGas("SwapMath_oneForZero_exactOutCapped");
         SwapMath.computeSwapStep(Constants.SQRT_PRICE_1_1, Constants.SQRT_PRICE_101_100, 2 ether, 1 ether, 600);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_computeSwapStep_swapZeroForOne_exactOutCapped() public {
-        snapStart("SwapMath_zeroForOne_exactOutCapped");
+        vm.startSnapshotGas("SwapMath_zeroForOne_exactOutCapped");
         SwapMath.computeSwapStep(Constants.SQRT_PRICE_1_1, Constants.SQRT_PRICE_99_100, 2 ether, 1 ether, 600);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_computeSwapStep_swapOneForZero_exactInPartial() public {
-        snapStart("SwapMath_oneForZero_exactInPartial");
+        vm.startSnapshotGas("SwapMath_oneForZero_exactInPartial");
         SwapMath.computeSwapStep(Constants.SQRT_PRICE_1_1, Constants.SQRT_PRICE_1010_100, 2 ether, 1_000 * -1, 600);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_computeSwapStep_swapZeroForOne_exactInPartial() public {
-        snapStart("SwapMath_zeroForOne_exactInPartial");
+        vm.startSnapshotGas("SwapMath_zeroForOne_exactInPartial");
         SwapMath.computeSwapStep(Constants.SQRT_PRICE_1_1, Constants.SQRT_PRICE_99_1000, 2 ether, 1_000 * -1, 600);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_computeSwapStep_swapOneForZero_exactOutPartial() public {
-        snapStart("SwapMath_oneForZero_exactOutPartial");
+        vm.startSnapshotGas("SwapMath_oneForZero_exactOutPartial");
         SwapMath.computeSwapStep(Constants.SQRT_PRICE_1_1, Constants.SQRT_PRICE_1010_100, 2 ether, 1_000, 600);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function test_computeSwapStep_swapZeroForOne_exactOutPartial() public {
-        snapStart("SwapMath_zeroForOne_exactOutPartial");
+        vm.startSnapshotGas("SwapMath_zeroForOne_exactOutPartial");
         SwapMath.computeSwapStep(Constants.SQRT_PRICE_1_1, Constants.SQRT_PRICE_99_1000, 2 ether, 1_000, 600);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 }

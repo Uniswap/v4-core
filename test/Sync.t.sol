@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 
 import {Deployers} from "./utils/Deployers.sol";
@@ -21,7 +20,7 @@ import {NativeERC20} from "../src/test/NativeERC20.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {CurrencyLibrary} from "../src/types/Currency.sol";
 
-contract SyncTest is Test, Deployers, GasSnapshot {
+contract SyncTest is Test, Deployers {
     using StateLibrary for IPoolManager;
     using TransientStateLibrary for IPoolManager;
 
@@ -33,9 +32,11 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         currency2 = deployMintAndApproveCurrency();
     }
 
-    function test_settle_failsIfLocked() public {
-        vm.expectRevert(IPoolManager.ManagerLocked.selector);
+    function test_sync_multiple_unlocked() public noIsolate {
+        manager.sync(currency1);
+        assertEq(Currency.unwrap(currency1), Currency.unwrap(manager.getSyncedCurrency()));
         manager.sync(currency0);
+        assertEq(Currency.unwrap(currency0), Currency.unwrap(manager.getSyncedCurrency()));
     }
 
     function test_sync_balanceIsZero() public {
@@ -210,9 +211,9 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         Actions[] memory actions = new Actions[](9);
         bytes[] memory params = new bytes[](9);
 
-        snapStart("getReserves");
+        vm.startSnapshotGas("getReserves");
         uint256 reserves = manager.getSyncedReserves();
-        snapEnd();
+        vm.stopSnapshotGas();
         assertEq(reserves, 0); // reserves are 0.
 
         actions[0] = Actions.TAKE;

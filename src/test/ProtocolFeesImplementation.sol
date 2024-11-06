@@ -12,6 +12,8 @@ contract ProtocolFeesImplementation is ProtocolFees {
     mapping(PoolId id => Pool.State) internal _pools;
     bool internal isUnlocked;
 
+    constructor() ProtocolFees(msg.sender) {}
+
     // Used to set the price of a pool to pretend that the pool has been initialized in order to successfully set a protocol fee
     function setPrice(PoolKey memory key, uint160 sqrtPriceX96) public {
         Pool.State storage pool = _getPool(key.toId());

@@ -142,7 +142,7 @@ contract Fuzzers is StdUtils {
         result.liquidityDelta = boundLiquidityDelta(key, params.liquidityDelta, liquidityDeltaFromAmounts);
     }
 
-    // Creates liquidity parameters with a stricter bound. Should be used if multiple positions being intitialized on the pool, with potential for tick overlap.
+    // Creates liquidity parameters with a stricter bound. Should be used if multiple positions being initialized on the pool, with potential for tick overlap.
     function createFuzzyLiquidityParamsWithTightBound(
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
