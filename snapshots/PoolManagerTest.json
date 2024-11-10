@@ -5,7 +5,7 @@
   "donate gas with 2 tokens": "145510",
   "erc20 collect protocol fees": "57500",
   "native collect protocol fees": "59643",
-  "poolManager bytecode size": "24050",
+  "poolManager bytecode size": "24009",
   "removeLiquidity with empty hook": "130613",
   "removeLiquidity with native token": "112523",
   "simple addLiquidity": "161276",

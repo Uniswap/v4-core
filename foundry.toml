@@ -6,6 +6,7 @@ fs_permissions = [{ access = "read-write", path = ".forge-snapshots/"}, { access
 solc = "0.8.26"
 evm_version = "cancun"
 gas_limit = "300000000"
+bytecode_hash = "none"
 
 [profile.default.fuzz]
 runs = 1000
