@@ -76,7 +76,10 @@ library Pool {
         uint256 feeGrowthOutside1X128;
     }
 
-    /// @dev The state of a pool
+    /// @notice The state of a pool
+    /// @dev Note that feeGrowthGlobal can be artificially inflated
+    /// For pools with a single liquidity position, actors can donate to themselves to freely inflate feeGrowthGlobal
+    /// atomically donating and collecting fees in the same unlockCallback may make the inflated value more extreme
     struct State {
         Slot0 slot0;
         uint256 feeGrowthGlobal0X128;
