@@ -9,7 +9,6 @@ import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
 import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {IHooks} from "../../src/interfaces/IHooks.sol";
 import {Currency} from "../../src/types/Currency.sol";
-import {PoolManager} from "../../src/PoolManager.sol";
 import {PoolSwapTest} from "../../src/test/PoolSwapTest.sol";
 import {PoolDonateTest} from "../../src/test/PoolDonateTest.sol";
 import {Deployers} from "./Deployers.sol";

@@ -1,8 +1,8 @@
 {
-  "BitMathLeastSignificantBitMaxUint128": "648",
-  "BitMathLeastSignificantBitMaxUint256": "648",
-  "BitMathLeastSignificantBitSmallNumber": "25",
-  "BitMathMostSignificantBitMaxUint128": "648",
-  "BitMathMostSignificantBitMaxUint256": "648",
-  "BitMathMostSignificantBitSmallNumber": "14"
+  "BitMathLeastSignificantBitMaxUint128": "718",
+  "BitMathLeastSignificantBitMaxUint256": "712",
+  "BitMathLeastSignificantBitSmallNumber": "99",
+  "BitMathMostSignificantBitMaxUint128": "757",
+  "BitMathMostSignificantBitMaxUint256": "751",
+  "BitMathMostSignificantBitSmallNumber": "138"
 }

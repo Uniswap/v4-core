@@ -4,7 +4,6 @@ pragma solidity ^0.8.20;
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {Pool} from "../../src/libraries/Pool.sol";
-import {PoolManager} from "../../src/PoolManager.sol";
 import {Position} from "../../src/libraries/Position.sol";
 import {TickMath} from "../../src/libraries/TickMath.sol";
 import {TickBitmap} from "../../src/libraries/TickBitmap.sol";
