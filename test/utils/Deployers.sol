@@ -7,7 +7,6 @@ import {Hooks} from "../../src/libraries/Hooks.sol";
 import {Currency, CurrencyLibrary} from "../../src/types/Currency.sol";
 import {IHooks} from "../../src/interfaces/IHooks.sol";
 import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
-import {PoolManager} from "../../src/PoolManager.sol";
 import {PoolId} from "../../src/types/PoolId.sol";
 import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
@@ -83,8 +82,13 @@ contract Deployers is Test {
         }
     }
 
-    function deployFreshManager() internal virtual {
-        manager = new PoolManager(address(this));
+    function deployFreshManager() internal virtual returns (IPoolManager manager_) {
+        bytes memory bytecode =
+            abi.encodePacked(vm.getCode("out/PoolManager.sol/PoolManager.default.json"), abi.encode(address(this)));
+        assembly {
+            manager_ := create(0, add(bytecode, 0x20), mload(bytecode))
+        }
+        manager = manager_;
     }
 
     function deployFreshManagerAndRouters() internal {
