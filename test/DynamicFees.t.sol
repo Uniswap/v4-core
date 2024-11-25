@@ -10,6 +10,8 @@ import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
+// keeping one more pool manager import here so PoolManager is built with both, the default and test profile. Removing this unused import here breaks compilation due to a solc bug right now. This line can be deleted once the solc bug is fixed.
+// https://github.com/ethereum/solidity/issues/15582
 import {PoolManager} from "../src/PoolManager.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
