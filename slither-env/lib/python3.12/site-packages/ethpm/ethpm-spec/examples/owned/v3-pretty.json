@@ -1,0 +1,27 @@
+{
+    "manifest": "ethpm/3",
+    "version": "1.0.0",
+    "name": "owned",
+    "meta": {
+        "license": "MIT",
+        "authors": [
+            "Piper Merriam <pipermerriam@gmail.com>"
+        ],
+        "description": "Reusable contracts which implement a privileged 'owner' model for authorization.",
+        "keywords": [
+            "authorization"
+        ],
+        "links": {
+            "documentation": "ipfs://QmUYcVzTfSwJoigggMxeo2g5STWAgJdisQsqcXHws7b1FW"
+        }
+    },
+    "sources": {
+        "Owned.sol": {
+            "type": "solidity",
+            "urls": [
+                "ipfs://QmU8QUSt56ZoBDJgjjXvAZEPro9LmK1m2gjVG5Q4s9x29W"
+            ],
+            "installPath": "./Owned.sol"
+        }
+    }
+}

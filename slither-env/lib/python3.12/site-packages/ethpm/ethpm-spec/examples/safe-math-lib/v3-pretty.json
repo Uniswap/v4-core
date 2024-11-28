@@ -1,0 +1,117 @@
+{
+    "compilers": [
+        {
+            "contractTypes": [
+                "SafeMathLib"
+            ],
+            "name": "solc",
+            "settings": {
+                "optimize": false
+            },
+            "version": "0.6.8+commit.0bbfe453"
+        }
+    ],
+    "contractTypes": {
+        "SafeMathLib": {
+            "abi": [
+                {
+                    "inputs": [
+                        {
+                            "internalType": "uint256",
+                            "name": "a",
+                            "type": "uint256"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "b",
+                            "type": "uint256"
+                        }
+                    ],
+                    "name": "safeAdd",
+                    "outputs": [
+                        {
+                            "internalType": "uint256",
+                            "name": "c",
+                            "type": "uint256"
+                        }
+                    ],
+                    "stateMutability": "pure",
+                    "type": "function"
+                },
+                {
+                    "inputs": [
+                        {
+                            "internalType": "uint256",
+                            "name": "a",
+                            "type": "uint256"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "b",
+                            "type": "uint256"
+                        }
+                    ],
+                    "name": "safeSub",
+                    "outputs": [
+                        {
+                            "internalType": "uint256",
+                            "name": "",
+                            "type": "uint256"
+                        }
+                    ],
+                    "stateMutability": "pure",
+                    "type": "function"
+                }
+            ],
+            "deploymentBytecode": {
+                "bytecode": "0x610144610026600b82828239805160001a60731461001957fe5b30600052607381538281f3fe73000000000000000000000000000000000000000030146080604052600436106100405760003560e01c8063a293d1e814610045578063e6cb901314610091575b600080fd5b61007b6004803603604081101561005b57600080fd5b8101908080359060200190929190803590602001909291905050506100dd565b6040518082815260200191505060405180910390f35b6100c7600480360360408110156100a757600080fd5b8101908080359060200190929190803590602001909291905050506100f4565b6040518082815260200191505060405180910390f35b6000828211156100e957fe5b818303905092915050565b600081830190508281101561010557fe5b8090509291505056fea26469706673582212201732500f2fac649ab2ce116d2145af69b3e8c6ef2d172ec377db7ed0b7a4801964736f6c63430006080033"
+            },
+            "devdoc": {
+                "author": "Piper Merriam <pipermerriam@gmail.com>",
+                "methods": {
+                    "safeAdd(uint256,uint256)": {
+                        "details": "Adds a and b, throwing an error if the operation would cause an overflow.",
+                        "params": {
+                            "a": "The first number to add",
+                            "b": "The second number to add"
+                        }
+                    },
+                    "safeSub(uint256,uint256)": {
+                        "details": "Subtracts b from a, throwing an error if the operation would cause an underflow.",
+                        "params": {
+                            "a": "The number to be subtracted from",
+                            "b": "The amount that should be subtracted"
+                        }
+                    }
+                },
+                "title": "Safe Math Library"
+            },
+            "runtimeBytecode": {
+                "bytecode": "0x73000000000000000000000000000000000000000030146080604052600436106100405760003560e01c8063a293d1e814610045578063e6cb901314610091575b600080fd5b61007b6004803603604081101561005b57600080fd5b8101908080359060200190929190803590602001909291905050506100dd565b6040518082815260200191505060405180910390f35b6100c7600480360360408110156100a757600080fd5b8101908080359060200190929190803590602001909291905050506100f4565b6040518082815260200191505060405180910390f35b6000828211156100e957fe5b818303905092915050565b600081830190508281101561010557fe5b8090509291505056fea26469706673582212201732500f2fac649ab2ce116d2145af69b3e8c6ef2d172ec377db7ed0b7a4801964736f6c63430006080033"
+            },
+            "sourceId": "SafeMathLib.sol"
+        }
+    },
+    "deployments": {
+        "blockchain://d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3/block/c4b7297b918ce3a93186eccff5195e77ef0c47b4e8cb8b66439aa25271f5170c": {
+            "SafeMathLib": {
+                "address": "0x6B2534269C5Ee98C37729d07Dc92C4b97EBB6235",
+                "block": "0x64fa9306a5c7aa3b8a71c29cd09fb897c3fb7325a3dbc75c4627dd8f08b759a6",
+                "contractType": "SafeMathLib",
+                "transaction": "0xb0ac2dbb86a29d70c8f3996834672e3af8cae7fc37718e49ac3adfd99eb23d31"
+            }
+        }
+    },
+    "manifest": "ethpm/3",
+    "name": "safe-math-lib",
+    "sources": {
+        "./SafeMathLib.sol": {
+            "installPath": "./SafeMathLib.sol",
+            "type": "solidity",
+            "urls": [
+                "ipfs://QmeyYahfHxPSoytQ2rPH2JUURin24sPvaMo6o6tKghwkAg"
+            ]
+        }
+    },
+    "version": "1.0.0"
+}

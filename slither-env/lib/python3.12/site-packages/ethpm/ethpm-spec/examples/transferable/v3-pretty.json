@@ -1,0 +1,27 @@
+{
+    "manifest": "ethpm/3",
+    "version": "1.0.0",
+    "name": "transferable",
+    "meta": {
+        "license": "MIT",
+        "authors": [
+            "Piper Merriam <pipermerriam@gmail.com>"
+        ],
+        "description": "Reusable contracts which implement a privileged 'owner' model for authorization with functionality for transfering ownership.",
+        "keywords": [
+            "authorization"
+        ]
+    },
+    "sources": {
+        "Transferable.sol": {
+            "type": "solidity",
+            "installPath": "./Transferable.sol",
+            "urls": [
+                "ipfs://QmdWB74Ca8tyXtS3UxzJqcvETv3LLkacX2ywfJfNNWVnYt"
+            ]
+        }
+    },
+    "buildDependencies": {
+        "owned": "ipfs://QmcxvhkJJVpbxEAa6cgW3B6XwPJb79w9GpNUv2P2THUzZR"
+    }
+}

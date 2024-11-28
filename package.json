@@ -1,0 +1,32 @@
+{
+  "name": "v4-core",
+  "version": "1.0.0",
+  "description": "[![Lint](https://github.com/Uniswap/v4-core/actions/workflows/lint.yml/badge.svg)](https://github.com/Uniswap/v4-core/actions/workflows/lint.yml) [![Tests](https://github.com/Uniswap/v4-core/actions/workflows/tests-merge.yml/badge.svg)](https://github.com/Uniswap/v4-core/actions/workflows/tests-merge.yml)",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Uniswap/v4-core.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Uniswap/v4-core/issues"
+  },
+  "homepage": "https://github.com/Uniswap/v4-core#readme",
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "chai": "^5.1.2",
+    "ethers": "^6.13.4",
+    "hardhat": "^2.22.16",
+    "mocha": "^10.8.2"
+  }
+}

@@ -1,0 +1,171 @@
+{
+    "compilers": [
+        {
+            "contractTypes": [
+                "Escrow",
+                "SafeSendLib"
+            ],
+            "name": "solc",
+            "settings": {
+                "optimize": false
+            },
+            "version": "0.6.8+commit.0bbfe453"
+        }
+    ],
+    "contractTypes": {
+        "Escrow": {
+            "abi": [
+                {
+                    "inputs": [
+                        {
+                            "internalType": "address",
+                            "name": "_recipient",
+                            "type": "address"
+                        }
+                    ],
+                    "stateMutability": "nonpayable",
+                    "type": "constructor"
+                },
+                {
+                    "inputs": [],
+                    "name": "recipient",
+                    "outputs": [
+                        {
+                            "internalType": "address",
+                            "name": "",
+                            "type": "address"
+                        }
+                    ],
+                    "stateMutability": "view",
+                    "type": "function"
+                },
+                {
+                    "inputs": [],
+                    "name": "releaseFunds",
+                    "outputs": [],
+                    "stateMutability": "nonpayable",
+                    "type": "function"
+                },
+                {
+                    "inputs": [],
+                    "name": "sender",
+                    "outputs": [
+                        {
+                            "internalType": "address",
+                            "name": "",
+                            "type": "address"
+                        }
+                    ],
+                    "stateMutability": "view",
+                    "type": "function"
+                }
+            ],
+            "deploymentBytecode": {
+                "bytecode": "0x608060405234801561001057600080fd5b506040516104e83803806104e88339818101604052602081101561003357600080fd5b8101908080519060200190929190505050336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555080600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555050610413806100d56000396000f3fe608060405234801561001057600080fd5b50600436106100415760003560e01c806366d003ac1461004657806367e404ce1461009057806369d89575146100da575b600080fd5b61004e6100e4565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b61009861010a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6100e261012f565b005b600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff16141561028257600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16730000000000000000000000000000000000000000639341231c9091476040518363ffffffff1660e01b8152600401808373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020018281526020019250505060206040518083038186803b15801561024157600080fd5b505af4158015610255573d6000803e3d6000fd5b505050506040513d602081101561026b57600080fd5b8101908080519060200190929190505050506103db565b600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156103d5576000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16730000000000000000000000000000000000000000639341231c9091476040518363ffffffff1660e01b8152600401808373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020018281526020019250505060206040518083038186803b15801561039457600080fd5b505af41580156103a8573d6000803e3d6000fd5b505050506040513d60208110156103be57600080fd5b8101908080519060200190929190505050506103da565b600080fd5b5b56fea2646970667358221220c0256c8fdbb9d70e72b54b5dcae800eb0d0723c366103209d2e40e60b6f352e564736f6c63430006080033",
+                "linkReferences": [
+                    {
+                        "length": 20,
+                        "name": "SafeSendLib",
+                        "offsets": [
+                            660,
+                            999
+                        ]
+                    }
+                ]
+            },
+            "devdoc": {
+                "author": "Piper Merriam <pipermerriam@gmail.com>",
+                "methods": {
+                    "releaseFunds()": {
+                        "details": "Releases the escrowed funds to the other party."
+                    }
+                },
+                "title": "Contract for holding funds in escrow between two semi trusted parties."
+            },
+            "runtimeBytecode": {
+                "bytecode": "0x608060405234801561001057600080fd5b50600436106100415760003560e01c806366d003ac1461004657806367e404ce1461009057806369d89575146100da575b600080fd5b61004e6100e4565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b61009861010a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6100e261012f565b005b600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff16141561028257600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16730000000000000000000000000000000000000000639341231c9091476040518363ffffffff1660e01b8152600401808373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020018281526020019250505060206040518083038186803b15801561024157600080fd5b505af4158015610255573d6000803e3d6000fd5b505050506040513d602081101561026b57600080fd5b8101908080519060200190929190505050506103db565b600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156103d5576000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16730000000000000000000000000000000000000000639341231c9091476040518363ffffffff1660e01b8152600401808373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020018281526020019250505060206040518083038186803b15801561039457600080fd5b505af41580156103a8573d6000803e3d6000fd5b505050506040513d60208110156103be57600080fd5b8101908080519060200190929190505050506103da565b600080fd5b5b56fea2646970667358221220c0256c8fdbb9d70e72b54b5dcae800eb0d0723c366103209d2e40e60b6f352e564736f6c63430006080033",
+                "linkReferences": [
+                    {
+                        "length": 20,
+                        "name": "SafeSendLib",
+                        "offsets": [
+                            447,
+                            786
+                        ]
+                    }
+                ]
+            },
+            "sourceId": "Escrow.sol"
+        },
+        "SafeSendLib": {
+            "abi": [],
+            "deploymentBytecode": {
+                "bytecode": "0x610132610026600b82828239805160001a60731461001957fe5b30600052607381538281f3fe730000000000000000000000000000000000000000301460806040526004361060335760003560e01c80639341231c146038575b600080fd5b818015604357600080fd5b50608d60048036036040811015605857600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff1690602001909291908035906020019092919050505060a7565b604051808215151515815260200191505060405180910390f35b60004782111560b557600080fd5b8273ffffffffffffffffffffffffffffffffffffffff166108fc839081150290604051600060405180830381858888f1935050505060f257600080fd5b600190509291505056fea26469706673582212203471502f8b953b5622ae380d01fe3a6c574e1b7ae3ba80ebae95d88771f6714564736f6c63430006080033"
+            },
+            "devdoc": {
+                "author": "Piper Merriam <pipermerriam@gmail.com>",
+                "methods": {
+                    "sendOrThrow(address,uint256)": {
+                        "details": "Attempts to send the specified amount to the recipient throwing an error if it fails",
+                        "params": {
+                            "recipient": "The address that the funds should be to.",
+                            "value": "The amount in wei that should be sent."
+                        }
+                    }
+                },
+                "title": "Library for safe sending of ether."
+            },
+            "runtimeBytecode": {
+                "bytecode": "0x730000000000000000000000000000000000000000301460806040526004361060335760003560e01c80639341231c146038575b600080fd5b818015604357600080fd5b50608d60048036036040811015605857600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff1690602001909291908035906020019092919050505060a7565b604051808215151515815260200191505060405180910390f35b60004782111560b557600080fd5b8273ffffffffffffffffffffffffffffffffffffffff166108fc839081150290604051600060405180830381858888f1935050505060f257600080fd5b600190509291505056fea26469706673582212203471502f8b953b5622ae380d01fe3a6c574e1b7ae3ba80ebae95d88771f6714564736f6c63430006080033"
+            },
+            "sourceId": "SafeSendLib.sol"
+        }
+    },
+    "deployments": {
+        "blockchain://d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3/block/752820c0ad7abc1200f9ad42c4adc6fbb4bd44b5bed4667990e64565102c1ba6": {
+            "SafeSendLib": {
+                "address": "0x379EdD01a8c6E56649C092D2699eA877CC89414B",
+                "block": "0xb05e03a8ba4b744d5754f93fcb9c48e836fa624d9c2942c7081661a0e9e3134b",
+                "contractType": "SafeSendLib",
+                "transaction": "0x32a498696bd9924f34ac01f755c126d5628947f9935188098dc8eb6f7a30c418"
+            },
+            "Escrow": {
+                "address": "0x41B8E7F94F92aE75266054f7029b2f5C30D19171",
+                "block": "0xe29b6d17dc4da99bbd985dd62c69cf70f3437c2c104eee24fa7a41d73e4a6524",
+                "contractType": "Escrow",
+                "transaction": "0x6f1bdf9e303c866dc74452cb418e05737c9b8c3a5ddfcd1c09509d5ec1fc23e9",
+				"runtimeBytecode": {
+					"linkDependencies": [
+						{
+							"offsets": [
+								447,
+								786
+							],
+							"type": "reference",
+							"value": "SafeSendLib"
+						}
+					]
+				}
+            }
+        }
+    },
+    "manifest": "ethpm/3",
+    "name": "escrow",
+    "sources": {
+        "./Escrow.sol": {
+            "installPath": "./Escrow.sol",
+            "type": "solidity",
+            "urls": [
+                "ipfs://QmNLpdCi4UakwJ9rBoL7rDnEzNeA6f8uvKbiMhZVqTucu1"
+            ]
+        },
+        "./SafeSendLib.sol": {
+            "installPath": "./SafeSendLib.sol",
+            "type": "solidity",
+            "urls": [
+                "ipfs://QmbEnqvCSAAYwQ474S1vCSBdMgdiRZ4gZWEmSmdXepXQJq"
+            ]
+        }
+    },
+    "version": "1.0.0"
+}

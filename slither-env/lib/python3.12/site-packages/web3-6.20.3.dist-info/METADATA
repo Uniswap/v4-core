@@ -1,0 +1,104 @@
+Metadata-Version: 2.1
+Name: web3
+Version: 6.20.3
+Summary: web3.py
+Home-page: https://github.com/ethereum/web3.py
+Author: The Ethereum Foundation
+Author-email: snakecharmers@ethereum.org
+License: MIT
+Keywords: ethereum
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Natural Language :: English
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Python: >=3.7.2
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: aiohttp >=3.7.4.post0
+Requires-Dist: ckzg <2
+Requires-Dist: eth-abi >=4.0.0
+Requires-Dist: eth-account <0.13,>=0.8.0
+Requires-Dist: eth-hash[pycryptodome] >=0.5.1
+Requires-Dist: eth-typing !=4.2.0,<5.0.0,>=3.0.0
+Requires-Dist: eth-utils <5,>=2.1.0
+Requires-Dist: hexbytes <0.4.0,>=0.1.0
+Requires-Dist: jsonschema >=4.0.0
+Requires-Dist: lru-dict <1.3.0,>=1.1.6
+Requires-Dist: protobuf >=4.21.6
+Requires-Dist: requests >=2.16.0
+Requires-Dist: typing-extensions >=4.0.1
+Requires-Dist: websockets >=10.0.0
+Requires-Dist: pyunormalize >=15.0.0
+Requires-Dist: pywin32 >=223 ; platform_system == "Windows"
+Provides-Extra: dev
+Requires-Dist: py-geth <4,>=3.14.0 ; extra == 'dev'
+Requires-Dist: sphinx >=5.3.0 ; extra == 'dev'
+Requires-Dist: sphinx-rtd-theme >=1.0.0 ; extra == 'dev'
+Requires-Dist: towncrier <22,>=21 ; extra == 'dev'
+Requires-Dist: ipfshttpclient ==0.8.0a2 ; extra == 'dev'
+Requires-Dist: bumpversion ; extra == 'dev'
+Requires-Dist: flaky >=3.7.0 ; extra == 'dev'
+Requires-Dist: hypothesis >=3.31.2 ; extra == 'dev'
+Requires-Dist: pre-commit >=2.21.0 ; extra == 'dev'
+Requires-Dist: pytest >=7.0.0 ; extra == 'dev'
+Requires-Dist: pytest-asyncio <0.23,>=0.21.2 ; extra == 'dev'
+Requires-Dist: pytest-mock >=1.10 ; extra == 'dev'
+Requires-Dist: pytest-watch >=4.2 ; extra == 'dev'
+Requires-Dist: pytest-xdist >=1.29 ; extra == 'dev'
+Requires-Dist: setuptools >=38.6.0 ; extra == 'dev'
+Requires-Dist: tox >=3.18.0 ; extra == 'dev'
+Requires-Dist: tqdm >4.32 ; extra == 'dev'
+Requires-Dist: twine >=1.13 ; extra == 'dev'
+Requires-Dist: when-changed >=0.3.0 ; extra == 'dev'
+Requires-Dist: build >=0.9.0 ; extra == 'dev'
+Requires-Dist: importlib-metadata <5.0 ; (python_version < "3.8") and extra == 'dev'
+Requires-Dist: eth-tester[py-evm] <0.10.0b1,>=0.9.0b1 ; (python_version <= "3.7") and extra == 'dev'
+Requires-Dist: eth-tester[py-evm] <0.12.0b1,>=0.11.0b1 ; (python_version > "3.7") and extra == 'dev'
+Provides-Extra: docs
+Requires-Dist: sphinx >=5.3.0 ; extra == 'docs'
+Requires-Dist: sphinx-rtd-theme >=1.0.0 ; extra == 'docs'
+Requires-Dist: towncrier <22,>=21 ; extra == 'docs'
+Provides-Extra: ipfs
+Requires-Dist: ipfshttpclient ==0.8.0a2 ; extra == 'ipfs'
+Provides-Extra: tester
+Requires-Dist: py-geth <4,>=3.14.0 ; extra == 'tester'
+Requires-Dist: eth-tester[py-evm] <0.10.0b1,>=0.9.0b1 ; (python_version <= "3.7") and extra == 'tester'
+Requires-Dist: eth-tester[py-evm] <0.12.0b1,>=0.11.0b1 ; (python_version > "3.7") and extra == 'tester'
+
+# web3.py
+
+[![Documentation Status](https://readthedocs.org/projects/web3py/badge/?version=latest)](https://web3py.readthedocs.io/en/latest/?badge=latest)
+[![Discord](https://img.shields.io/discord/809793915578089484?color=blue&label=chat&logo=discord&logoColor=white)](https://discord.gg/GHryRvPB84)
+[![Build Status](https://circleci.com/gh/ethereum/web3.py.svg?style=shield)](https://circleci.com/gh/ethereum/web3.py)
+
+A Python library for interacting with Ethereum.
+
+-   Python 3.7.2+ support
+
+---
+
+## Quickstart
+
+[Get started in 5 minutes](https://web3py.readthedocs.io/en/latest/quickstart.html) or
+[take a tour](https://web3py.readthedocs.io/en/latest/overview.html) of the library.
+
+## Documentation
+
+For additional guides, examples, and APIs, see the [documentation](https://web3py.readthedocs.io/en/latest/).
+
+## Want to help?
+
+Want to file a bug, contribute some code, or improve documentation? Excellent! Read up on our
+guidelines for [contributing](https://web3py.readthedocs.io/en/latest/contributing.html),
+then check out issues that are labeled
+[Good First Issue](https://github.com/ethereum/web3.py/issues?q=is%3Aissue+is%3Aopen+label%3A%22Good+First+Issue%22).
+
+---
+
+#### Questions on implementation or usage? Join the conversation on [discord](https://discord.gg/GHryRvPB84).

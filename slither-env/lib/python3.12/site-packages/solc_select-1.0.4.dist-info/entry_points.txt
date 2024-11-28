@@ -1,0 +1,3 @@
+[console_scripts]
+solc = solc_select.__main__:solc
+solc-select = solc_select.__main__:solc_select

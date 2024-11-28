@@ -1,0 +1,181 @@
+{
+    "manifest": "ethpm/3",
+    "version": "1.0.0",
+    "name": "wallet",
+    "sources": {
+        "Wallet.sol": {
+            "type": "solidity",
+            "installPath": "./Wallet.sol",
+            "urls": [
+                "ipfs://QmfTZzHLSShTS1woD7JNszAyhjtS7ErFDT4QmtwEQQ1qpa"
+            ]
+        }
+    },
+    "compilers": [
+        {
+            "contractTypes": [
+                "Wallet"
+            ],
+            "name": "solc",
+            "version": "0.6.8+commit.0bbfe453",
+            "settings": {
+                "optimize": false
+            }
+        }
+    ],
+    "contractTypes": {
+        "Wallet": {
+            "sourceId": "Wallet.sol",
+            "deploymentBytecode": {
+                "bytecode": "0x608060405234801561001057600080fd5b50336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550610430806100606000396000f3fe608060405234801561001057600080fd5b50600436106100455760003560e01c8063095ea7b3146100485780632e1a7d4d146100ae578063d0679d34146100f457610046565b5b005b6100946004803603604081101561005e57600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff1690602001909291908035906020019092919050505061015a565b604051808215151515815260200191505060405180910390f35b6100da600480360360208110156100c457600080fd5b8101908080359060200190929190505050610203565b604051808215151515815260200191505060405180910390f35b6101406004803603604081101561010a57600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff16906020019092919080359060200190929190505050610362565b604051808215151515815260200191505060405180910390f35b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff16146101b557600080fd5b81600160008573ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020819055506001905092915050565b6000600160003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000205473000000000000000000000000000000000000000063a293d1e89091846040518363ffffffff1660e01b8152600401808381526020018281526020019250505060206040518083038186803b15801561029d57600080fd5b505af41580156102b1573d6000803e3d6000fd5b505050506040513d60208110156102c757600080fd5b8101908080519060200190929190505050600160003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020819055503373ffffffffffffffffffffffffffffffffffffffff166108fc839081150290604051600060405180830381858888f1935050505061035957600080fd5b60019050919050565b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff16146103bd57600080fd5b8273ffffffffffffffffffffffffffffffffffffffff166108fc839081150290604051600060405180830381858888f1935050505090509291505056fea2646970667358221220fa09119fa13c8df37a523851a236b913e5d00bf3274d5619daad516f510c8a9264736f6c63430006080033",
+                "linkReferences": [
+                    {
+                        "offsets": [
+                            679
+                        ],
+                        "length": 20,
+                        "name": "safe-math-lib:SafeMathLib"
+                    }
+                ]
+            },
+            "runtimeBytecode": {
+                "bytecode": "0x608060405234801561001057600080fd5b50600436106100455760003560e01c8063095ea7b3146100485780632e1a7d4d146100ae578063d0679d34146100f457610046565b5b005b6100946004803603604081101561005e57600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff1690602001909291908035906020019092919050505061015a565b604051808215151515815260200191505060405180910390f35b6100da600480360360208110156100c457600080fd5b8101908080359060200190929190505050610203565b604051808215151515815260200191505060405180910390f35b6101406004803603604081101561010a57600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff16906020019092919080359060200190929190505050610362565b604051808215151515815260200191505060405180910390f35b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff16146101b557600080fd5b81600160008573ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020819055506001905092915050565b6000600160003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000205473000000000000000000000000000000000000000063a293d1e89091846040518363ffffffff1660e01b8152600401808381526020018281526020019250505060206040518083038186803b15801561029d57600080fd5b505af41580156102b1573d6000803e3d6000fd5b505050506040513d60208110156102c757600080fd5b8101908080519060200190929190505050600160003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020819055503373ffffffffffffffffffffffffffffffffffffffff166108fc839081150290604051600060405180830381858888f1935050505061035957600080fd5b60019050919050565b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff16146103bd57600080fd5b8273ffffffffffffffffffffffffffffffffffffffff166108fc839081150290604051600060405180830381858888f1935050505090509291505056fea2646970667358221220fa09119fa13c8df37a523851a236b913e5d00bf3274d5619daad516f510c8a9264736f6c63430006080033",
+                "linkReferences": [
+                    {
+                        "offsets": [
+                            583
+                        ],
+                        "length": 20,
+                        "name": "safe-math-lib:SafeMathLib"
+                    }
+                ]
+            },
+            "abi": [
+				{
+					"stateMutability": "nonpayable",
+					"type": "fallback"
+				},
+				{
+					"inputs": [
+						{
+							"internalType": "address",
+							"name": "recipient",
+							"type": "address"
+						},
+						{
+							"internalType": "uint256",
+							"name": "value",
+							"type": "uint256"
+						}
+					],
+					"name": "approve",
+					"outputs": [
+						{
+							"internalType": "bool",
+							"name": "",
+							"type": "bool"
+						}
+					],
+					"stateMutability": "nonpayable",
+					"type": "function"
+				},
+				{
+					"inputs": [
+						{
+							"internalType": "address payable",
+							"name": "recipient",
+							"type": "address"
+						},
+						{
+							"internalType": "uint256",
+							"name": "value",
+							"type": "uint256"
+						}
+					],
+					"name": "send",
+					"outputs": [
+						{
+							"internalType": "bool",
+							"name": "",
+							"type": "bool"
+						}
+					],
+					"stateMutability": "nonpayable",
+					"type": "function"
+				},
+				{
+					"inputs": [
+						{
+							"internalType": "uint256",
+							"name": "value",
+							"type": "uint256"
+						}
+					],
+					"name": "withdraw",
+					"outputs": [
+						{
+							"internalType": "bool",
+							"name": "",
+							"type": "bool"
+						}
+					],
+					"stateMutability": "nonpayable",
+					"type": "function"
+				}
+            ],
+            "devdoc": {
+                "author": "Piper Merriam <pipermerriam@gmail.com>",
+                "methods": {
+                    "approve(address,uint256)": {
+                        "details": "Sets recipient to be approved to withdraw the specified amount"
+                    },
+                    "send(address,uint256)": {
+                        "details": "Sends the recipient the specified amount"
+                    },
+                    "withdraw(uint256)": {
+                        "details": "Lets caller withdraw up to their approved amount"
+                    }
+                },
+                "title": "Contract for holding funds in escrow between two semi trusted parties."
+            },
+            "userdoc": {
+                "methods": {
+                    "approve(address,uint256)": {
+                        "notice": "This will set the recipient to be approved to withdraw the specified amount."
+                    },
+                    "send(address,uint256)": {
+                        "notice": "This will send the reciepient the specified amount."
+                    },
+                    "withdraw(uint256)": {
+                        "notice": "This will withdraw provided value, deducting it from your total allowance."
+                    }
+                }
+            }
+        }
+    },
+    "deployments": {
+        "blockchain://41941023680923e0fe4d74a34bdac8141f2540e3ae90623718e47d66d1ca4a2d/block/e30e4ef1dd1e73e788c3d094859f14ddd139a19e8a3667e2ee4831d9bd1113ac": {
+            "Wallet": {
+                "contractType": "Wallet",
+                "address": "0x491CB3AC79d0f5D7078C3cF6EF3daEcE9623CD21",
+                "transaction": "0x8648f43125776ec2b727eda84d10c67db1693fce8bc1e7b3f84f9e40086e4773",
+                "block": "0x77adadc004c1a830682f3237b42ce81a379d11dfd88292c97ad80658f470717a",
+                "runtimeBytecode": {
+                    "linkDependencies": [
+                        {
+                            "offsets": [
+                                583
+                            ],
+                            "type": "reference",
+                            "value": "safe-math-lib:SafeMathLib"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "buildDependencies": {
+        "owned": "ipfs://QmcxvhkJJVpbxEAa6cgW3B6XwPJb79w9GpNUv2P2THUzZR",
+        "safe-math-lib": "ipfs://QmWnPsiS3Xb8GvCDEBFnnKs8Yk4HaAX6rCqJAaQXGbCoPk"
+    }
+}
