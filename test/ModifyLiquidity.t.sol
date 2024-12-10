@@ -3,7 +3,6 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {Deployers} from "./utils/Deployers.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolKey} from "src/types/PoolKey.sol";
 import {IPoolManager} from "src/interfaces/IPoolManager.sol";
 import {IHooks} from "src/interfaces/IHooks.sol";
@@ -21,7 +20,7 @@ import {TickMath} from "src/libraries/TickMath.sol";
 import {toBalanceDelta} from "src/types/BalanceDelta.sol";
 import {Logger} from "./utils/Logger.sol";
 
-contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers, GasSnapshot {
+contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers {
     using StateLibrary for IPoolManager;
 
     PoolKey simpleKey; // vanilla pool key
@@ -40,7 +39,7 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
     function setUp() public {
         deployFreshManagerAndRouters();
         deployMintAndApprove2Currencies();
-        (simpleKey, simplePoolId) = initPool(currency0, currency1, IHooks(address(0)), 3000, SQRT_PRICE_1_1, ZERO_BYTES);
+        (simpleKey, simplePoolId) = initPool(currency0, currency1, IHooks(address(0)), 3000, SQRT_PRICE_1_1);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -72,9 +71,8 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
     // Static edge case, no fuzz test, to make sure we test max tickspacing.
     function test_ffi_addLiqudity_weirdPool_0_returnsCorrectLiquidityDelta() public {
         // Use a pool with TickSpacing of MAX_TICK_SPACING
-        (PoolKey memory wp0, PoolId wpId0) = initPool(
-            currency0, currency1, IHooks(address(0)), 500, TickMath.MAX_TICK_SPACING, SQRT_PRICE_1_1, ZERO_BYTES
-        );
+        (PoolKey memory wp0, PoolId wpId0) =
+            initPool(currency0, currency1, IHooks(address(0)), 500, TickMath.MAX_TICK_SPACING, SQRT_PRICE_1_1);
 
         // Set the params to add random amount of liquidity to random tick boundary.
         int24 tickUpper = TickMath.MAX_TICK_SPACING * 4;
@@ -97,9 +95,8 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
     // Static edge case, no fuzz test, to make sure we test min tick spacing.
     function test_ffi_addLiqudity_weirdPool_1_returnsCorrectLiquidityDelta() public {
         // Use a pool with TickSpacing of MIN_TICK_SPACING
-        (PoolKey memory wp0, PoolId wpId0) = initPool(
-            currency0, currency1, IHooks(address(0)), 551, TickMath.MIN_TICK_SPACING, SQRT_PRICE_1_1, ZERO_BYTES
-        );
+        (PoolKey memory wp0, PoolId wpId0) =
+            initPool(currency0, currency1, IHooks(address(0)), 551, TickMath.MIN_TICK_SPACING, SQRT_PRICE_1_1);
 
         // Set the params to add random amount of liquidity to random tick boundary.
         int24 tickUpper = TickMath.MIN_TICK_SPACING * 17;
@@ -307,12 +304,12 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
 
     function test_gas_modifyLiquidity_newPosition() public {
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
-        snapLastCall("create new liquidity to a position with salt");
+        vm.snapshotGasLastCall("create new liquidity to a position with salt");
     }
 
     function test_gas_modifyLiquidity_updateSamePosition_withSalt() public {
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
-        snapLastCall("add liquidity to already existing position with salt");
+        vm.snapshotGasLastCall("add liquidity to already existing position with salt");
     }
 }

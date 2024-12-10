@@ -55,7 +55,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @param tickSpacing The minimum number of ticks between initialized ticks
     /// @param hooks The hooks contract address for the pool, or address(0) if none
     /// @param sqrtPriceX96 The price of the pool on initialization
-    /// @param tick The initial tick of the pool corresponding to the intialized price
+    /// @param tick The initial tick of the pool corresponding to the initialized price
     event Initialize(
         PoolId indexed id,
         Currency indexed currency0,
@@ -116,11 +116,8 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @dev A swap fee totaling MAX_SWAP_FEE (100%) makes exact output swaps impossible since the input is entirely consumed by the fee
     /// @param key The pool key for the pool to initialize
     /// @param sqrtPriceX96 The initial square root price
-    /// @param hookData The data to pass through to the initialize hooks
     /// @return tick The initial tick of the pool
-    function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
-        external
-        returns (int24 tick);
+    function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick);
 
     struct ModifyLiquidityParams {
         // the lower and upper tick of the position
@@ -189,7 +186,8 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     function sync(Currency currency) external;
 
     /// @notice Called by the user to net out some value owed to the user
-    /// @dev Can also be used as a mechanism for _free_ flash loans
+    /// @dev Will revert if the requested amount is not available, consider using `mint` instead
+    /// @dev Can also be used as a mechanism for free flash loans
     /// @param currency The currency to withdraw from the pool manager
     /// @param to The address to withdraw to
     /// @param amount The amount of currency to withdraw

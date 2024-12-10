@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {Hooks} from "../../src/libraries/Hooks.sol";
@@ -24,8 +23,9 @@ import {BaseTestHooks} from "../../src/test/BaseTestHooks.sol";
 import {EmptyRevertContract} from "../../src/test/EmptyRevertContract.sol";
 import {StateLibrary} from "../../src/libraries/StateLibrary.sol";
 import {Constants} from "../utils/Constants.sol";
+import {CustomRevert} from "../../src/libraries/CustomRevert.sol";
 
-contract HooksTest is Test, Deployers, GasSnapshot {
+contract HooksTest is Test, Deployers {
     using Hooks for IHooks;
     using StateLibrary for IPoolManager;
 
@@ -43,7 +43,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function test_initialize_succeedsWithHook() public {
-        manager.initialize(uninitializedKey, SQRT_PRICE_1_1, new bytes(123));
+        manager.initialize(uninitializedKey, SQRT_PRICE_1_1);
 
         (uint160 sqrtPriceX96,,,) = manager.getSlot0(uninitializedKey.toId());
         assertEq(sqrtPriceX96, SQRT_PRICE_1_1);
@@ -54,13 +54,13 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     function test_beforeInitialize_invalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, bytes4(0xdeadbeef));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.initialize(uninitializedKey, SQRT_PRICE_1_1, ZERO_BYTES);
+        manager.initialize(uninitializedKey, SQRT_PRICE_1_1);
     }
 
     function test_afterInitialize_invalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterInitialize.selector, bytes4(0xdeadbeef));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.initialize(uninitializedKey, SQRT_PRICE_1_1, ZERO_BYTES);
+        manager.initialize(uninitializedKey, SQRT_PRICE_1_1);
     }
 
     function test_beforeAfterAddLiquidity_beforeAfterRemoveLiquidity_succeedsWithHook() public {
@@ -1001,7 +1001,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         BaseTestHooks revertingHook = BaseTestHooks(beforeSwapFlag);
 
         PoolKey memory key = PoolKey(currency0, currency1, 0, 60, IHooks(revertingHook));
-        manager.initialize(key, SQRT_PRICE_1_1, new bytes(0));
+        manager.initialize(key, SQRT_PRICE_1_1);
 
         IPoolManager.SwapParams memory swapParams =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
@@ -1011,9 +1011,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Hooks.Wrap__FailedHookCall.selector,
+                CustomRevert.WrappedError.selector,
                 address(revertingHook),
-                abi.encodeWithSelector(BaseTestHooks.HookNotImplemented.selector)
+                IHooks.beforeSwap.selector,
+                abi.encodeWithSelector(BaseTestHooks.HookNotImplemented.selector),
+                abi.encodeWithSelector(Hooks.HookCallFailed.selector)
             )
         );
         swapRouter.swap(key, swapParams, testSettings, new bytes(0));
@@ -1027,7 +1029,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         EmptyRevertContract revertingHook = EmptyRevertContract(beforeSwapFlag);
 
         PoolKey memory key = PoolKey(currency0, currency1, 0, 60, IHooks(address(revertingHook)));
-        manager.initialize(key, SQRT_PRICE_1_1, new bytes(0));
+        manager.initialize(key, SQRT_PRICE_1_1);
 
         IPoolManager.SwapParams memory swapParams =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
@@ -1036,7 +1038,13 @@ contract HooksTest is Test, Deployers, GasSnapshot {
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         vm.expectRevert(
-            abi.encodeWithSelector(Hooks.Wrap__FailedHookCall.selector, address(revertingHook), new bytes(0))
+            abi.encodeWithSelector(
+                CustomRevert.WrappedError.selector,
+                address(beforeSwapFlag),
+                IHooks.beforeSwap.selector,
+                "",
+                abi.encodeWithSelector(Hooks.HookCallFailed.selector)
+            )
         );
         swapRouter.swap(key, swapParams, testSettings, new bytes(0));
     }

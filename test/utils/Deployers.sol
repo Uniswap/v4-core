@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
+import "forge-std/Test.sol";
 import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {Hooks} from "../../src/libraries/Hooks.sol";
 import {Currency, CurrencyLibrary} from "../../src/types/Currency.sol";
@@ -25,15 +26,8 @@ import {PoolClaimsTest} from "../../src/test/PoolClaimsTest.sol";
 import {ActionsRouter} from "../../src/test/ActionsRouter.sol";
 import {LiquidityAmounts} from "../../test/utils/LiquidityAmounts.sol";
 import {StateLibrary} from "../../src/libraries/StateLibrary.sol";
-import {
-    ProtocolFeeControllerTest,
-    OutOfBoundsProtocolFeeControllerTest,
-    RevertingProtocolFeeControllerTest,
-    OverflowProtocolFeeControllerTest,
-    InvalidReturnSizeProtocolFeeControllerTest
-} from "../../src/test/ProtocolFeeControllerTest.sol";
 
-contract Deployers {
+contract Deployers is Test {
     using LPFeeLibrary for uint24;
     using StateLibrary for IPoolManager;
 
@@ -69,11 +63,7 @@ contract Deployers {
 
     PoolClaimsTest claimsRouter;
     PoolNestedActionsTest nestedActionRouter;
-    ProtocolFeeControllerTest feeController;
-    RevertingProtocolFeeControllerTest revertingFeeController;
-    OutOfBoundsProtocolFeeControllerTest outOfBoundsFeeController;
-    OverflowProtocolFeeControllerTest overflowFeeController;
-    InvalidReturnSizeProtocolFeeControllerTest invalidReturnSizeFeeController;
+    address feeController;
 
     PoolKey key;
     PoolKey nativeKey;
@@ -84,8 +74,17 @@ contract Deployers {
     uint160 hookPermissionCount = 14;
     uint160 clearAllHookPermissionsMask = ~uint160(0) << (hookPermissionCount);
 
+    modifier noIsolate() {
+        if (msg.sender != address(this)) {
+            (bool success,) = address(this).call(msg.data);
+            require(success);
+        } else {
+            _;
+        }
+    }
+
     function deployFreshManager() internal virtual {
-        manager = new PoolManager();
+        manager = new PoolManager(address(this));
     }
 
     function deployFreshManagerAndRouters() internal {
@@ -98,11 +97,7 @@ contract Deployers {
         takeRouter = new PoolTakeTest(manager);
         claimsRouter = new PoolClaimsTest(manager);
         nestedActionRouter = new PoolNestedActionsTest(manager);
-        feeController = new ProtocolFeeControllerTest();
-        revertingFeeController = new RevertingProtocolFeeControllerTest();
-        outOfBoundsFeeController = new OutOfBoundsProtocolFeeControllerTest();
-        overflowFeeController = new OverflowProtocolFeeControllerTest();
-        invalidReturnSizeFeeController = new InvalidReturnSizeProtocolFeeControllerTest();
+        feeController = makeAddr("feeController");
         actionsRouter = new ActionsRouter(manager);
 
         manager.setProtocolFeeController(feeController);
@@ -154,17 +149,13 @@ contract Deployers {
         }
     }
 
-    function initPool(
-        Currency _currency0,
-        Currency _currency1,
-        IHooks hooks,
-        uint24 fee,
-        uint160 sqrtPriceX96,
-        bytes memory initData
-    ) internal returns (PoolKey memory _key, PoolId id) {
+    function initPool(Currency _currency0, Currency _currency1, IHooks hooks, uint24 fee, uint160 sqrtPriceX96)
+        internal
+        returns (PoolKey memory _key, PoolId id)
+    {
         _key = PoolKey(_currency0, _currency1, fee, fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2), hooks);
         id = _key.toId();
-        manager.initialize(_key, sqrtPriceX96, initData);
+        manager.initialize(_key, sqrtPriceX96);
     }
 
     function initPool(
@@ -173,12 +164,11 @@ contract Deployers {
         IHooks hooks,
         uint24 fee,
         int24 tickSpacing,
-        uint160 sqrtPriceX96,
-        bytes memory initData
+        uint160 sqrtPriceX96
     ) internal returns (PoolKey memory _key, PoolId id) {
         _key = PoolKey(_currency0, _currency1, fee, tickSpacing, hooks);
         id = _key.toId();
-        manager.initialize(_key, sqrtPriceX96, initData);
+        manager.initialize(_key, sqrtPriceX96);
     }
 
     function initPoolAndAddLiquidity(
@@ -186,10 +176,9 @@ contract Deployers {
         Currency _currency1,
         IHooks hooks,
         uint24 fee,
-        uint160 sqrtPriceX96,
-        bytes memory initData
+        uint160 sqrtPriceX96
     ) internal returns (PoolKey memory _key, PoolId id) {
-        (_key, id) = initPool(_currency0, _currency1, hooks, fee, sqrtPriceX96, initData);
+        (_key, id) = initPool(_currency0, _currency1, hooks, fee, sqrtPriceX96);
         modifyLiquidityRouter.modifyLiquidity{value: msg.value}(_key, LIQUIDITY_PARAMS, ZERO_BYTES);
     }
 
@@ -199,10 +188,9 @@ contract Deployers {
         IHooks hooks,
         uint24 fee,
         uint160 sqrtPriceX96,
-        bytes memory initData,
         uint256 msgValue
     ) internal returns (PoolKey memory _key, PoolId id) {
-        (_key, id) = initPool(_currency0, _currency1, hooks, fee, sqrtPriceX96, initData);
+        (_key, id) = initPool(_currency0, _currency1, hooks, fee, sqrtPriceX96);
         modifyLiquidityRouter.modifyLiquidity{value: msgValue}(_key, LIQUIDITY_PARAMS, ZERO_BYTES);
     }
 
@@ -211,11 +199,10 @@ contract Deployers {
         deployFreshManagerAndRouters();
         // sets the global currencies and key
         deployMintAndApprove2Currencies();
-        (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES);
+        (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, 3000, SQRT_PRICE_1_1);
         nestedActionRouter.executor().setKey(key);
-        (nativeKey,) = initPoolAndAddLiquidityETH(
-            CurrencyLibrary.ADDRESS_ZERO, currency1, hooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES, 1 ether
-        );
+        (nativeKey,) =
+            initPoolAndAddLiquidityETH(CurrencyLibrary.ADDRESS_ZERO, currency1, hooks, 3000, SQRT_PRICE_1_1, 1 ether);
         uninitializedKey = key;
         uninitializedNativeKey = nativeKey;
         uninitializedKey.fee = 100;

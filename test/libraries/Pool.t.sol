@@ -15,9 +15,8 @@ import {Slot0} from "../../src/types/Slot0.sol";
 import {SafeCast} from "../../src/libraries/SafeCast.sol";
 import {ProtocolFeeLibrary} from "../../src/libraries/ProtocolFeeLibrary.sol";
 import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 
-contract PoolTest is Test, GasSnapshot {
+contract PoolTest is Test {
     using Pool for Pool.State;
     using LPFeeLibrary for uint24;
     using ProtocolFeeLibrary for *;
@@ -27,30 +26,27 @@ contract PoolTest is Test, GasSnapshot {
     uint24 constant MAX_PROTOCOL_FEE = ProtocolFeeLibrary.MAX_PROTOCOL_FEE; // 0.1%
     uint24 constant MAX_LP_FEE = LPFeeLibrary.MAX_LP_FEE; // 100%
 
-    function testPoolInitialize(uint160 sqrtPriceX96, uint24 protocolFee, uint24 swapFee) public {
+    function test_pool_initialize(uint160 sqrtPriceX96, uint24 swapFee) public {
         if (sqrtPriceX96 < TickMath.MIN_SQRT_PRICE || sqrtPriceX96 >= TickMath.MAX_SQRT_PRICE) {
             vm.expectRevert(abi.encodeWithSelector(TickMath.InvalidSqrtPrice.selector, sqrtPriceX96));
-            state.initialize(sqrtPriceX96, protocolFee, swapFee);
+            state.initialize(sqrtPriceX96, swapFee);
         } else {
-            state.initialize(sqrtPriceX96, protocolFee, swapFee);
+            state.initialize(sqrtPriceX96, swapFee);
             assertEq(state.slot0.sqrtPriceX96(), sqrtPriceX96);
-            assertEq(state.slot0.protocolFee(), protocolFee);
+            assertEq(state.slot0.protocolFee(), 0);
             assertEq(state.slot0.tick(), TickMath.getTickAtSqrtPrice(sqrtPriceX96));
             assertLt(state.slot0.tick(), TickMath.MAX_TICK);
             assertGt(state.slot0.tick(), TickMath.MIN_TICK - 1);
         }
     }
 
-    function testModifyLiquidity(
-        uint160 sqrtPriceX96,
-        uint24 protocolFee,
-        uint24 lpFee,
-        Pool.ModifyLiquidityParams memory params
-    ) public {
+    function test_modifyLiquidity(uint160 sqrtPriceX96, uint24 lpFee, Pool.ModifyLiquidityParams memory params)
+        public
+    {
         // Assumptions tested in PoolManager.t.sol
         params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
 
-        testPoolInitialize(sqrtPriceX96, protocolFee, lpFee);
+        test_pool_initialize(sqrtPriceX96, lpFee);
 
         if (params.tickLower >= params.tickUpper) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TicksMisordered.selector, params.tickLower, params.tickUpper));
@@ -106,9 +102,8 @@ contract PoolTest is Test, GasSnapshot {
         uint24 protocolFee = protocolFee1 << 12 | protocolFee0;
 
         // initialize and add liquidity
-        testModifyLiquidity(
+        test_modifyLiquidity(
             sqrtPriceX96,
-            protocolFee,
             lpFee,
             Pool.ModifyLiquidityParams({
                 owner: address(this),
@@ -121,8 +116,15 @@ contract PoolTest is Test, GasSnapshot {
         );
         Slot0 slot0 = state.slot0;
 
+        assertEq(slot0.protocolFee(), 0);
+        slot0 = slot0.setProtocolFee(protocolFee);
+        assertEq(slot0.protocolFee(), protocolFee);
+        state.slot0 = slot0;
+
+        uint16 expectedProtocolFee = params.zeroForOne ? protocolFee0 : protocolFee1;
+
         uint24 _lpFee = params.lpFeeOverride.isOverride() ? params.lpFeeOverride.removeOverrideFlag() : lpFee;
-        uint24 swapFee = protocolFee == 0 ? _lpFee : uint16(protocolFee).calculateSwapFee(_lpFee);
+        uint24 swapFee = expectedProtocolFee == 0 ? _lpFee : expectedProtocolFee.calculateSwapFee(_lpFee);
 
         if (params.amountSpecified >= 0 && swapFee == MAX_LP_FEE) {
             vm.expectRevert(Pool.InvalidFeeForExactOut.selector);

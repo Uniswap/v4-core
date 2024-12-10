@@ -13,16 +13,18 @@ import {PoolKey} from "../src/types/PoolKey.sol";
 import {PoolManager} from "../src/PoolManager.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {DynamicFeesTestHook} from "../src/test/DynamicFeesTestHook.sol";
 import {Currency} from "../src/types/Currency.sol";
 import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
+import {CustomRevert} from "../src/libraries/CustomRevert.sol";
+import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
 
-contract TestDynamicFees is Test, Deployers, GasSnapshot {
+contract TestDynamicFees is Test, Deployers {
     using StateLibrary for IPoolManager;
+    using ProtocolFeeLibrary for uint16;
 
     DynamicFeesTestHook dynamicFeesHooks = DynamicFeesTestHook(
         address(
@@ -58,12 +60,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         deployMintAndApprove2Currencies();
         (key,) = initPoolAndAddLiquidity(
-            currency0,
-            currency1,
-            IHooks(address(dynamicFeesHooks)),
-            LPFeeLibrary.DYNAMIC_FEE_FLAG,
-            SQRT_PRICE_1_1,
-            ZERO_BYTES
+            currency0, currency1, IHooks(address(dynamicFeesHooks)), LPFeeLibrary.DYNAMIC_FEE_FLAG, SQRT_PRICE_1_1
         );
     }
 
@@ -74,12 +71,14 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Hooks.Wrap__FailedHookCall.selector,
+                CustomRevert.WrappedError.selector,
                 address(dynamicFeesHooks),
-                abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee)
+                IHooks.afterInitialize.selector,
+                abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee),
+                abi.encodeWithSelector(Hooks.HookCallFailed.selector)
             )
         );
-        manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
+        manager.initialize(key, SQRT_PRICE_1_1);
     }
 
     function test_initialize_initializesFeeTo0() public {
@@ -88,7 +87,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         // this fee is not fetched as theres no afterInitialize hook
         dynamicFeesNoHooks.setFee(1000000);
 
-        manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
+        manager.initialize(key, SQRT_PRICE_1_1);
         assertEq(_fetchPoolLPFee(key), 0);
     }
 
@@ -96,7 +95,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         key.tickSpacing = 30;
         dynamicFeesHooks.setFee(123);
 
-        manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
+        manager.initialize(key, SQRT_PRICE_1_1);
         assertEq(_fetchPoolLPFee(key), 123);
     }
 
@@ -112,12 +111,14 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         // afterInitialize will try to update the fee, and fail
         vm.expectRevert(
             abi.encodeWithSelector(
-                Hooks.Wrap__FailedHookCall.selector,
+                CustomRevert.WrappedError.selector,
                 address(dynamicFeesHooks),
-                abi.encodeWithSelector(IPoolManager.UnauthorizedDynamicLPFeeUpdate.selector)
+                IHooks.afterInitialize.selector,
+                abi.encodeWithSelector(IPoolManager.UnauthorizedDynamicLPFeeUpdate.selector),
+                abi.encodeWithSelector(Hooks.HookCallFailed.selector)
             )
         );
-        manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
+        manager.initialize(key, SQRT_PRICE_1_1);
     }
 
     function test_updateDynamicLPFee_beforeSwap_failsWithTooLargeFee() public {
@@ -131,11 +132,14 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Hooks.Wrap__FailedHookCall.selector,
+                CustomRevert.WrappedError.selector,
                 address(dynamicFeesHooks),
-                abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee)
+                IHooks.beforeSwap.selector,
+                abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee),
+                abi.encodeWithSelector(Hooks.HookCallFailed.selector)
             )
         );
+
         swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
     }
 
@@ -151,7 +155,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 123);
 
         swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
-        snapLastCall("update dynamic fee in before swap");
+        vm.snapshotGasLastCall("update dynamic fee in before swap");
 
         assertEq(_fetchPoolLPFee(key), 123);
     }
@@ -225,7 +229,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         dynamicFeesHooks.setFee(999999);
 
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         manager.setProtocolFee(key, 1000);
 
         IPoolManager.SwapParams memory params =
@@ -233,16 +237,8 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        vm.expectEmit(true, true, true, true, address(manager));
-        emit Swap(key.toId(), address(swapRouter), -101000000, 100, 79228162514264329670727698909, 1e18, -1, 999999);
-
-        BalanceDelta delta = swapRouter.swap(key, params, testSettings, ZERO_BYTES);
-        snapLastCall("swap with lp fee and protocol fee");
-
-        uint256 expectedProtocolFee = uint256(uint128(-delta.amount0())) * 1000 / 1e6;
-        assertEq(manager.protocolFeesAccrued(currency0), expectedProtocolFee);
-
-        assertEq(_fetchPoolLPFee(key), 999999);
+        vm.expectRevert(Pool.InvalidFeeForExactOut.selector);
+        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
     }
 
     function test_swap_100PercentFee_AmountIn_WithProtocol() public {
@@ -250,7 +246,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         dynamicFeesHooks.setFee(1000000);
 
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         manager.setProtocolFee(key, 1000);
 
         IPoolManager.SwapParams memory params =
@@ -272,14 +268,14 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         dynamicFeesHooks.setFee(123);
 
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         manager.setProtocolFee(key, 1000);
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         vm.expectEmit(true, true, true, true, address(manager));
-        emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 1122);
+        emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 1123);
 
         swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
 
@@ -299,7 +295,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         uint24 protocolFee = (uint24(protocolFee1) << 12) | uint24(protocolFee0);
         dynamicFeesHooks.setFee(lpFee);
 
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         manager.setProtocolFee(key, protocolFee);
 
         IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
@@ -312,13 +308,20 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         BalanceDelta delta = swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
+        uint24 swapFee = uint16(protocolFee).calculateSwapFee(lpFee);
+
         uint256 expectedProtocolFee = uint256(uint128(-delta.amount0())) * protocolFee0 / 1e6;
+        if (lpFee == 0) {
+            assertEq(protocolFee0, swapFee);
+            if (((uint256(uint128(-delta.amount0())) * protocolFee0) % 1e6) != 0) expectedProtocolFee++;
+        }
+
         assertEq(manager.protocolFeesAccrued(currency0), expectedProtocolFee);
     }
 
     function test_swap_withDynamicFee_gas() public {
         (key,) = initPoolAndAddLiquidity(
-            currency0, currency1, dynamicFeesNoHooks, LPFeeLibrary.DYNAMIC_FEE_FLAG, SQRT_PRICE_1_1, ZERO_BYTES
+            currency0, currency1, dynamicFeesNoHooks, LPFeeLibrary.DYNAMIC_FEE_FLAG, SQRT_PRICE_1_1
         );
 
         assertEq(_fetchPoolLPFee(key), 0);
@@ -332,7 +335,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 123);
 
         swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
-        snapLastCall("swap with dynamic fee");
+        vm.snapshotGasLastCall("swap with dynamic fee");
     }
 
     function _fetchPoolLPFee(PoolKey memory _key) internal view returns (uint256 lpFee) {

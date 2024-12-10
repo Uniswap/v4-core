@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import {CustomRevert} from "./CustomRevert.sol";
@@ -11,7 +11,7 @@ library LPFeeLibrary {
     /// @notice Thrown when the static or dynamic fee on a pool exceeds 100%.
     error LPFeeTooLarge(uint24 fee);
 
-    /// @notice An lp fee of exactly 0b1000000... signals a dynamic fee pool. This isnt a valid static fee as it is > MAX_LP_FEE
+    /// @notice An lp fee of exactly 0b1000000... signals a dynamic fee pool. This isn't a valid static fee as it is > MAX_LP_FEE
     uint24 public constant DYNAMIC_FEE_FLAG = 0x800000;
 
     /// @notice the second bit of the fee returned by beforeSwap is used to signal if the stored LP fee should be overridden in this swap
