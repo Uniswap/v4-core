@@ -189,6 +189,9 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
         newDynamicLPFee.validate();
         PoolId id = key.toId();
         _pools[id].setLPFee(newDynamicLPFee);
+
+        // Emit the DynamicLPFeeUpdated event
+        emit DynamicLPFeeUpdated(key, newDynamicLPFee, msg.sender);
     }
 
     /// @notice Make a delegate call, bubble up any error or return the result
