@@ -6,7 +6,7 @@
   "erc20 collect protocol fees": "57500",
   "native collect protocol fees": "59643",
   "poolManager bytecode size": "24009",
-  "poolManager initcode hash (without constructor params, as uint256)": "19281018184167079101887460999643277467915809731640262058315305465805214934776",
+  "poolManager initcode hash (without constructor params, as uint256)": "19281018184167079101887461999643277467915809731640262058315305465805214934776",
   "removeLiquidity with empty hook": "130613",
   "removeLiquidity with native token": "112523",
   "simple addLiquidity": "161276",
