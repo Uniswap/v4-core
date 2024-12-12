@@ -6,15 +6,15 @@ import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {ProxyPoolManager} from "../src/test/ProxyPoolManager.sol";
 import {NoDelegateCallTest} from "../src/test/NoDelegateCallTest.sol";
-import {PoolManager} from "../src/PoolManager.sol";
 import {NoDelegateCall} from "../src/NoDelegateCall.sol";
 import {Deployers} from "./utils/Deployers.sol";
 
 contract TestDelegateCall is Test, Deployers {
     // override to use ProxyPoolManager
-    function deployFreshManager() internal virtual override {
-        IPoolManager delegateManager = new PoolManager(address(this));
+    function deployFreshManager() internal virtual override returns (IPoolManager manager_) {
+        IPoolManager delegateManager = super.deployFreshManager();
         manager = new ProxyPoolManager(address(delegateManager));
+        return manager;
     }
 
     NoDelegateCallTest noDelegateCallTest;

@@ -8,6 +8,14 @@ evm_version = "cancun"
 gas_limit = "300000000"
 bytecode_hash = "none"
 
+additional_compiler_profiles = [
+  { name = "test", via_ir = false }
+]
+
+compilation_restrictions = [
+  { paths = "**/test/**", via_ir = false },
+]
+
 [profile.default.fuzz]
 runs = 1000
 seed = "0x4444"
