@@ -342,6 +342,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         newDynamicLPFee.validate();
         PoolId id = key.toId();
         _pools[id].setLPFee(newDynamicLPFee);
+
+        // Emit the DynamicLPFeeUpdated event
+        emit DynamicLPFeeUpdated(key, newDynamicLPFee, msg.sender);
     }
 
     // if settling native, integrators should still call `sync` first to avoid DoS attack vectors
