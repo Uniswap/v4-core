@@ -83,6 +83,13 @@ contract PoolManagerTest is Test, Deployers {
         vm.snapshotValue("poolManager bytecode size", address(manager).code.length);
     }
 
+    function test_initcodeHash() public {
+        vm.snapshotValue(
+            "poolManager initcode hash (without constructor params, as uint256)",
+            uint256(keccak256(type(PoolManager).creationCode))
+        );
+    }
+
     function test_addLiquidity_failsIfNotInitialized() public {
         vm.expectRevert(Pool.PoolNotInitialized.selector);
         modifyLiquidityRouter.modifyLiquidity(uninitializedKey, LIQUIDITY_PARAMS, ZERO_BYTES);
