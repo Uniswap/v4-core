@@ -224,6 +224,13 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// If the upper 12 bytes are not 0, they will be 0-ed out
     function burn(address from, uint256 id, uint256 amount) external;
 
+    /// @notice Emitted when a dynamic LP fee is updated
+    /// @param poolKey The pool key for the pool whose LP fee was updated
+    /// @param newDynamicLPFee The new dynamic LP fee value
+    /// @param updater The address that initiated the update
+    event DynamicLPFeeUpdated(PoolKey indexed poolKey, uint24 newDynamicLPFee, address indexed updater);
+
+
     /// @notice Updates the pools lp fees for the a pool that has enabled dynamic lp fees.
     /// @dev A swap fee totaling MAX_SWAP_FEE (100%) makes exact output swaps impossible since the input is entirely consumed by the fee
     /// @param key The key of the pool to update dynamic LP fees for
