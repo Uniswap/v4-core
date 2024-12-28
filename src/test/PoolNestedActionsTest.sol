@@ -9,7 +9,7 @@ import {Constants} from "../../test/utils/Constants.sol";
 import {Test} from "forge-std/Test.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
-import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
+import {PoolId} from "../types/PoolId.sol";
 import {CurrencySettler} from "../../test/utils/CurrencySettler.sol";
 import {StateLibrary} from "../libraries/StateLibrary.sol";
 import {TransientStateLibrary} from "../libraries/TransientStateLibrary.sol";
@@ -67,7 +67,6 @@ contract NestedActionExecutor is Test, PoolTestBase {
     using StateLibrary for IPoolManager;
     using TransientStateLibrary for IPoolManager;
     using CurrencySettler for Currency;
-    using PoolIdLibrary for PoolKey;
 
     PoolKey internal key;
     address user;
@@ -224,7 +223,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
         PoolId id = key.toId();
         (uint256 price,,,) = manager.getSlot0(id);
         assertEq(price, 0);
-        manager.initialize(key, Constants.SQRT_PRICE_1_2, Constants.ZERO_BYTES);
+        manager.initialize(key, Constants.SQRT_PRICE_1_2);
         (price,,,) = manager.getSlot0(id);
         assertEq(price, Constants.SQRT_PRICE_1_2);
     }

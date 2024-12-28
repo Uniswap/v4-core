@@ -2,11 +2,10 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
 import {ProtocolFeeLibrary} from "../../src/libraries/ProtocolFeeLibrary.sol";
 
-contract ProtocolFeeLibraryTest is Test, GasSnapshot {
+contract ProtocolFeeLibraryTest is Test {
     function test_getZeroForOneFee() public pure {
         uint24 fee = uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE - 1) << 12 | ProtocolFeeLibrary.MAX_PROTOCOL_FEE;
         assertEq(ProtocolFeeLibrary.getZeroForOneFee(fee), uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE));
@@ -55,30 +54,34 @@ contract ProtocolFeeLibraryTest is Test, GasSnapshot {
 
     function test_calculateSwapFee() public pure {
         assertEq(
-            ProtocolFeeLibrary.calculateSwapFee(uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE), LPFeeLibrary.MAX_LP_FEE),
+            ProtocolFeeLibrary.calculateSwapFee(uint16(ProtocolFeeLibrary.MAX_PROTOCOL_FEE), LPFeeLibrary.MAX_LP_FEE),
             LPFeeLibrary.MAX_LP_FEE
         );
-        assertEq(ProtocolFeeLibrary.calculateSwapFee(uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE), 3000), 3997);
+        assertEq(ProtocolFeeLibrary.calculateSwapFee(uint16(ProtocolFeeLibrary.MAX_PROTOCOL_FEE), 3000), 3997);
         assertEq(
-            ProtocolFeeLibrary.calculateSwapFee(uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE), 0),
+            ProtocolFeeLibrary.calculateSwapFee(uint16(ProtocolFeeLibrary.MAX_PROTOCOL_FEE), 0),
             ProtocolFeeLibrary.MAX_PROTOCOL_FEE
         );
         assertEq(ProtocolFeeLibrary.calculateSwapFee(0, 0), 0);
         assertEq(ProtocolFeeLibrary.calculateSwapFee(0, 1000), 1000);
     }
 
-    function test_fuzz_calculateSwapFee(uint24 protocolFee, uint24 lpFee) public pure {
-        protocolFee = uint24(bound(protocolFee, 0, ProtocolFeeLibrary.MAX_PROTOCOL_FEE));
+    function test_fuzz_calculateSwapFee(uint16 protocolFee, uint24 lpFee) public pure {
+        protocolFee = uint16(bound(protocolFee, 0, ProtocolFeeLibrary.MAX_PROTOCOL_FEE));
         lpFee = uint24(bound(lpFee, 0, LPFeeLibrary.MAX_LP_FEE));
         uint24 swapFee = ProtocolFeeLibrary.calculateSwapFee(protocolFee, lpFee);
-        // if lp fee is not the max, the swap fee should never be the max since the protocol fee is taken off first and then the lp fee is taken from the remaining amount
         if (lpFee < LPFeeLibrary.MAX_LP_FEE) {
-            assertLt(swapFee, LPFeeLibrary.MAX_LP_FEE);
+            assertLe(swapFee, LPFeeLibrary.MAX_LP_FEE);
+        } else {
+            // if lp fee is equal to max, swap fee can never be larger
+            assertEq(swapFee, LPFeeLibrary.MAX_LP_FEE);
         }
-        assertGe(swapFee, lpFee);
 
-        uint256 expectedSwapFee =
-            protocolFee + lpFee * uint256(LPFeeLibrary.MAX_LP_FEE - protocolFee) / LPFeeLibrary.MAX_LP_FEE;
+        // protocolFee + lpFee(1_000_000 - protocolFee) / 1_000_000 (rounded up)
+        uint256 expectedSwapFee = protocolFee + (1e6 - protocolFee) * uint256(lpFee) / 1e6;
+        if (((1e6 - protocolFee) * uint256(lpFee)) % 1e6 != 0) expectedSwapFee++;
+
+        assertGe(swapFee, lpFee);
         assertEq(swapFee, uint24(expectedSwapFee));
     }
 }

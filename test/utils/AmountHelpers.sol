@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {LiquidityAmounts} from "./LiquidityAmounts.sol";
 import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
-import {PoolId, PoolIdLibrary} from "../../src/types/PoolId.sol";
+import {PoolId} from "../../src/types/PoolId.sol";
 import {TickMath} from "../../src/libraries/TickMath.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
 import {StateLibrary} from "../../src/libraries/StateLibrary.sol";
@@ -16,7 +16,7 @@ library AmountHelpers {
         IPoolManager.ModifyLiquidityParams memory params,
         PoolKey memory key
     ) public view returns (uint256 amount0, uint256 amount1) {
-        PoolId id = PoolIdLibrary.toId(key);
+        PoolId id = key.toId();
         uint128 liquidity = StateLibrary.getLiquidity(manager, id);
         (uint160 sqrtPriceX96,,,) = StateLibrary.getSlot0(manager, id);
 

@@ -13,7 +13,7 @@ If you’re interested in contributing please see our [contribution guidelines](
 
 ## Whitepaper
 
-A more detailed description of Uniswap v4 Core can be found in the draft of the [Uniswap v4 Core Whitepaper](./docs/whitepaper-v4.pdf).
+A more detailed description of Uniswap v4 Core can be found in the draft of the [Uniswap v4 Core Whitepaper](./docs/whitepaper/whitepaper-v4.pdf).
 
 ## Architecture
 
@@ -98,10 +98,4 @@ contract MyContract is IUnlockCallback {
 
 ## License
 
-The primary license for Uniswap V4 Core is the Business Source License 1.1 (`BUSL-1.1`), see [LICENSE](https://github.com/Uniswap/v4-core/blob/main/LICENSE). Minus the following exceptions:
-
-- Some [libraries](./src/libraries) have a GPL license
-- Both [FullMath.sol](./src/libraries/FullMath.sol) and [Hooks.sol](./src/libraries/Hooks.sol) have an MIT License
-- [Interfaces](./src/interfaces) and [types](./src/types/) have an MIT license
-
-Each of these files states their license type.
+Uniswap V4 Core is licensed under the Business Source License 1.1 (`BUSL-1.1`), see [BUSL_LICENSE](https://github.com/Uniswap/v4-core/blob/main/licenses/BUSL_LICENSE), and the MIT License (`MIT`), see [MIT_LICENSE](https://github.com/Uniswap/v4-core/blob/main/licenses/BUSL_LICENSE). Each file in Uniswap V4 Core states the applicable license type in the header.

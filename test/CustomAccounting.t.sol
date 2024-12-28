@@ -2,20 +2,21 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {FeeTakingHook} from "../src/test/FeeTakingHook.sol";
+import {LPFeeTakingHook} from "../src/test/LPFeeTakingHook.sol";
 import {CustomCurveHook} from "../src/test/CustomCurveHook.sol";
 import {DeltaReturningHook} from "../src/test/DeltaReturningHook.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
+import {PoolId} from "../src/types/PoolId.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {Currency} from "../src/types/Currency.sol";
 import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 
-contract CustomAccountingTest is Test, Deployers, GasSnapshot {
+contract CustomAccountingTest is Test, Deployers {
     using SafeCast for *;
 
     address hook;
@@ -48,11 +49,22 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         _etchHookAndInitPool(hookAddr, impl);
     }
 
+    function _setUpLPFeeTakingPool() internal {
+        address hookAddr = address(
+            uint160(
+                Hooks.AFTER_ADD_LIQUIDITY_FLAG | Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG
+                    | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG | Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG
+            )
+        );
+        address impl = address(new LPFeeTakingHook(manager));
+        _etchHookAndInitPool(hookAddr, impl);
+    }
+
     function _etchHookAndInitPool(address hookAddr, address implAddr) internal {
         vm.etch(hookAddr, implAddr.code);
         hook = hookAddr;
 
-        (key,) = initPoolAndAddLiquidity(currency0, currency1, IHooks(hookAddr), 100, SQRT_PRICE_1_1, ZERO_BYTES);
+        (key,) = initPoolAndAddLiquidity(currency0, currency1, IHooks(hookAddr), 100, SQRT_PRICE_1_1);
     }
 
     // ------------------------ SWAP  ------------------------
@@ -71,7 +83,7 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
             sqrtPriceLimitX96: SQRT_PRICE_1_2
         });
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
-        snapLastCall("swap CA fee on unspecified");
+        vm.snapshotGasLastCall("swap CA fee on unspecified");
 
         // input is 1000 for output of 998 with this much liquidity available
         // plus a fee of 1.23% on unspecified (output) => (998*123)/10000 = 12
@@ -120,7 +132,7 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
             sqrtPriceLimitX96: SQRT_PRICE_1_2
         });
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
-        snapLastCall("swap CA custom curve + swap noop");
+        vm.snapshotGasLastCall("swap CA custom curve + swap noop");
 
         // the custom curve hook is 1-1 linear
         assertEq(currency0.balanceOf(address(this)), balanceBefore0 - amountToSwap, "amount 0");
@@ -241,7 +253,7 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
                     "manager balance change exact input"
                 );
 
-                // exact output, where there isnt enough output reserves available to pay swap and hook
+                // exact output, where there isn't enough output reserves available to pay swap and hook
             } else if (!isExactIn && (hookDeltaSpecified + amountSpecified > maxPossibleOut_fuzz_test)) {
                 // the hook will have taken hookDeltaSpecified of the maxPossibleOut
                 assertEq(deltaSpecified, maxPossibleOut_fuzz_test - hookDeltaSpecified, "deltaSpecified exact output");
@@ -277,7 +289,7 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         uint256 managerBalanceBefore1 = currency1.balanceOf(address(manager));
         // console2.log(address(key.hooks));
         modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
-        snapLastCall("addLiquidity CA fee");
+        vm.snapshotGasLastCall("addLiquidity CA fee");
 
         uint256 hookGain0 = currency0.balanceOf(hook) - hookBalanceBefore0;
         uint256 hookGain1 = currency1.balanceOf(hook) - hookBalanceBefore1;
@@ -304,7 +316,7 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         uint256 managerBalanceBefore1 = currency1.balanceOf(address(manager));
 
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
-        snapLastCall("removeLiquidity CA fee");
+        vm.snapshotGasLastCall("removeLiquidity CA fee");
 
         uint256 hookGain0 = currency0.balanceOf(hook) - hookBalanceBefore0;
         uint256 hookGain1 = currency1.balanceOf(hook) - hookBalanceBefore1;
@@ -316,6 +328,65 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         // Assert that the hook got 5.43% of the withdrawn liquidity
         assertEq(hookGain0, managerLoss0 * 543 / 10000, "hook amount 0");
         assertEq(hookGain1, managerLoss1 * 543 / 10000, "hook amount 1");
+        assertEq(thisGain0 + hookGain0, managerLoss0, "manager amount 0");
+        assertEq(thisGain1 + hookGain1, managerLoss1, "manager amount 1");
+    }
+
+    function test_fuzz_addLiquidity_withLPFeeTakingHook(uint128 feeRevenue0, uint128 feeRevenue1) public {
+        feeRevenue0 = uint128(bound(feeRevenue0, 0, type(uint128).max / 2));
+        feeRevenue1 = uint128(bound(feeRevenue1, 0, type(uint128).max / 2));
+        _setUpLPFeeTakingPool(); // creates liquidity as part of setup
+
+        // donate to generate fee revenue
+        donateRouter.donate(key, feeRevenue0, feeRevenue1, ZERO_BYTES);
+
+        uint256 hookBalanceBefore0 = currency0.balanceOf(hook);
+        uint256 hookBalanceBefore1 = currency1.balanceOf(hook);
+
+        // add liquidity again to trigger the hook, which should take the fee revenue
+        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
+
+        uint256 hookGain0 = currency0.balanceOf(hook) - hookBalanceBefore0;
+        uint256 hookGain1 = currency1.balanceOf(hook) - hookBalanceBefore1;
+
+        // Assert that the hook took ALL of the fee revenue, minus 1 wei of imprecision
+        assertApproxEqAbs(hookGain0, feeRevenue0, 1 wei);
+        assertApproxEqAbs(hookGain1, feeRevenue1, 1 wei);
+        assertTrue(hookGain0 <= feeRevenue0);
+        assertTrue(hookGain1 <= feeRevenue1);
+    }
+
+    function test_fuzz_removeLiquidity_withLPFeeTakingHook(uint128 feeRevenue0, uint128 feeRevenue1) public {
+        // test fails when fee revenue approaches int128.max because PoolManager is limited by (principal + fees)
+        feeRevenue0 = uint128(bound(feeRevenue0, 0, type(uint128).max / 3));
+        feeRevenue1 = uint128(bound(feeRevenue1, 0, type(uint128).max / 3));
+        _setUpLPFeeTakingPool(); // creates liquidity as part of setup
+
+        // donate to generate fee revenue
+        donateRouter.donate(key, feeRevenue0, feeRevenue1, ZERO_BYTES);
+
+        uint256 balanceBefore0 = currency0.balanceOf(address(this));
+        uint256 balanceBefore1 = currency1.balanceOf(address(this));
+        uint256 hookBalanceBefore0 = currency0.balanceOf(hook);
+        uint256 hookBalanceBefore1 = currency1.balanceOf(hook);
+        uint256 managerBalanceBefore0 = currency0.balanceOf(address(manager));
+        uint256 managerBalanceBefore1 = currency1.balanceOf(address(manager));
+
+        // remove liquidity to trigger the hook, which should take the fee revenue
+        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
+
+        uint256 hookGain0 = currency0.balanceOf(hook) - hookBalanceBefore0;
+        uint256 hookGain1 = currency1.balanceOf(hook) - hookBalanceBefore1;
+        uint256 thisGain0 = currency0.balanceOf(address(this)) - balanceBefore0;
+        uint256 thisGain1 = currency1.balanceOf(address(this)) - balanceBefore1;
+        uint256 managerLoss0 = managerBalanceBefore0 - currency0.balanceOf(address(manager));
+        uint256 managerLoss1 = managerBalanceBefore1 - currency1.balanceOf(address(manager));
+
+        // Assert that the hook took ALL of the fee revenue, minus 1 wei of imprecision
+        assertApproxEqAbs(hookGain0, feeRevenue0, 1 wei);
+        assertApproxEqAbs(hookGain1, feeRevenue1, 1 wei);
+        assertTrue(hookGain0 <= feeRevenue0);
+        assertTrue(hookGain1 <= feeRevenue1);
         assertEq(thisGain0 + hookGain0, managerLoss0, "manager amount 0");
         assertEq(thisGain1 + hookGain1, managerLoss1, "manager amount 1");
     }

@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
+import {PoolId} from "../src/types/PoolId.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
@@ -12,15 +12,12 @@ import {PoolKey} from "../src/types/PoolKey.sol";
 import {PoolManager} from "../src/PoolManager.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {Currency} from "../src/types/Currency.sol";
-import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {Constants} from "../test/utils/Constants.sol";
 import {SkipCallsTestHook} from "../src/test/SkipCallsTestHook.sol";
 
-contract SkipCallsTest is Test, Deployers, GasSnapshot {
-    using PoolIdLibrary for PoolKey;
-
+contract SkipCallsTest is Test, Deployers {
     PoolSwapTest.TestSettings testSettings = PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
     function deploy(SkipCallsTestHook skipCallsTestHook) private {
@@ -32,7 +29,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
         assertEq(skipCallsTestHook.counter(), 0);
 
-        (key,) = initPool(currency0, currency1, IHooks(address(skipCallsTestHook)), 3000, SQRT_PRICE_1_1, ZERO_BYTES);
+        (key,) = initPool(currency0, currency1, IHooks(address(skipCallsTestHook)), 3000, SQRT_PRICE_1_1);
     }
 
     function approveAndAddLiquidity(SkipCallsTestHook skipCallsTestHook) private {
@@ -159,7 +156,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
         // swaps and increments counter
         swapRouter.swap(key, SWAP_PARAMS, testSettings, abi.encode(address(this)));
-        snapLastCall("swap skips hook call if hook is caller");
+        vm.snapshotGasLastCall("swap skips hook call if hook is caller");
         assertEq(skipCallsTestHook.counter(), 1);
     }
 

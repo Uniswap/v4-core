@@ -16,28 +16,26 @@ import {MockHooks} from "../src/test/MockHooks.sol";
 import {MockContract} from "../src/test/MockContract.sol";
 import {EmptyTestHooks} from "../src/test/EmptyTestHooks.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
-import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
+import {PoolId} from "../src/types/PoolId.sol";
 import {LPFeeLibrary} from "../src/libraries/LPFeeLibrary.sol";
-import {ProtocolFeeControllerTest} from "../src/test/ProtocolFeeControllerTest.sol";
-import {IProtocolFeeController} from "../src/interfaces/IProtocolFeeController.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 
-contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
+contract PoolManagerInitializeTest is Test, Deployers {
     using Hooks for IHooks;
-    using PoolIdLibrary for PoolKey;
     using LPFeeLibrary for uint24;
     using ProtocolFeeLibrary for uint24;
     using StateLibrary for IPoolManager;
 
     event Initialize(
-        PoolId poolId,
+        PoolId indexed poolId,
         Currency indexed currency0,
         Currency indexed currency1,
         uint24 fee,
         int24 tickSpacing,
-        IHooks hooks
+        IHooks hooks,
+        uint160 sqrtPriceX96,
+        int24 tick
     );
 
     function setUp() public {
@@ -60,25 +58,32 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         // tested in Hooks.t.sol
         key0.hooks = IHooks(Constants.ADDRESS_ZERO);
 
-        if (key0.tickSpacing > manager.MAX_TICK_SPACING()) {
-            vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooLarge.selector));
-            manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
-        } else if (key0.tickSpacing < manager.MIN_TICK_SPACING()) {
-            vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooSmall.selector));
-            manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
+        if (key0.tickSpacing > TickMath.MAX_TICK_SPACING) {
+            vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooLarge.selector, key0.tickSpacing));
+            manager.initialize(key0, sqrtPriceX96);
+        } else if (key0.tickSpacing < TickMath.MIN_TICK_SPACING) {
+            vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooSmall.selector, key0.tickSpacing));
+            manager.initialize(key0, sqrtPriceX96);
         } else if (key0.currency0 >= key0.currency1) {
-            vm.expectRevert(abi.encodeWithSelector(IPoolManager.CurrenciesOutOfOrderOrEqual.selector));
-            manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    IPoolManager.CurrenciesOutOfOrderOrEqual.selector, key0.currency0, key0.currency1
+                )
+            );
+            manager.initialize(key0, sqrtPriceX96);
         } else if (!key0.hooks.isValidHookAddress(key0.fee)) {
             vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(key0.hooks)));
-            manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
+            manager.initialize(key0, sqrtPriceX96);
         } else if ((key0.fee != LPFeeLibrary.DYNAMIC_FEE_FLAG) && (key0.fee > 1000000)) {
-            vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.FeeTooLarge.selector));
-            manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
+            vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, key0.fee));
+            manager.initialize(key0, sqrtPriceX96);
         } else {
+            int24 tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
             vm.expectEmit(true, true, true, true);
-            emit Initialize(key0.toId(), key0.currency0, key0.currency1, key0.fee, key0.tickSpacing, key0.hooks);
-            manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
+            emit Initialize(
+                key0.toId(), key0.currency0, key0.currency1, key0.fee, key0.tickSpacing, key0.hooks, sqrtPriceX96, tick
+            );
+            manager.initialize(key0, sqrtPriceX96);
 
             (uint160 slot0SqrtPriceX96,, uint24 slot0ProtocolFee,) = manager.getSlot0(key0.toId());
             assertEq(slot0SqrtPriceX96, sqrtPriceX96);
@@ -89,7 +94,9 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
     function test_initialize_forNativeTokens(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
-        uninitializedKey.currency0 = CurrencyLibrary.NATIVE;
+        uninitializedKey.currency0 = CurrencyLibrary.ADDRESS_ZERO;
+
+        int24 tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
 
         vm.expectEmit(true, true, true, true);
         emit Initialize(
@@ -98,9 +105,11 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             uninitializedKey.currency1,
             uninitializedKey.fee,
             uninitializedKey.tickSpacing,
-            uninitializedKey.hooks
+            uninitializedKey.hooks,
+            sqrtPriceX96,
+            tick
         );
-        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+        manager.initialize(uninitializedKey, sqrtPriceX96);
 
         (uint160 slot0SqrtPriceX96, int24 slot0Tick, uint24 slot0ProtocolFee,) =
             manager.getSlot0(uninitializedKey.toId());
@@ -124,15 +133,15 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
         uninitializedKey.hooks = IHooks(mockAddr);
 
-        int24 tick = manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+        int24 tick = manager.initialize(uninitializedKey, sqrtPriceX96);
         (uint160 slot0SqrtPriceX96,,,) = manager.getSlot0(uninitializedKey.toId());
         assertEq(slot0SqrtPriceX96, sqrtPriceX96, "sqrtPrice");
 
         bytes32 beforeSelector = MockHooks.beforeInitialize.selector;
-        bytes memory beforeParams = abi.encode(address(this), uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+        bytes memory beforeParams = abi.encode(address(this), uninitializedKey, sqrtPriceX96);
 
         bytes32 afterSelector = MockHooks.afterInitialize.selector;
-        bytes memory afterParams = abi.encode(address(this), uninitializedKey, sqrtPriceX96, tick, ZERO_BYTES);
+        bytes memory afterParams = abi.encode(address(this), uninitializedKey, sqrtPriceX96, tick);
 
         assertEq(MockContract(mockAddr).timesCalledSelector(beforeSelector), 1, "beforeSelector count");
         assertTrue(MockContract(mockAddr).calledWithSelector(beforeSelector, beforeParams), "beforeSelector params");
@@ -144,7 +153,9 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         // Assumptions tested in Pool.t.sol
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
-        uninitializedKey.tickSpacing = manager.MAX_TICK_SPACING();
+        uninitializedKey.tickSpacing = TickMath.MAX_TICK_SPACING;
+
+        int24 tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
 
         vm.expectEmit(true, true, true, true);
         emit Initialize(
@@ -153,10 +164,12 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             uninitializedKey.currency1,
             uninitializedKey.fee,
             uninitializedKey.tickSpacing,
-            uninitializedKey.hooks
+            uninitializedKey.hooks,
+            sqrtPriceX96,
+            tick
         );
 
-        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+        manager.initialize(uninitializedKey, sqrtPriceX96);
     }
 
     function test_initialize_succeedsWithEmptyHooks(uint160 sqrtPriceX96) public {
@@ -171,7 +184,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
         uninitializedKey.hooks = mockHooks;
 
-        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+        manager.initialize(uninitializedKey, sqrtPriceX96);
         (uint160 slot0SqrtPriceX96,,,) = manager.getSlot0(uninitializedKey.toId());
         assertEq(slot0SqrtPriceX96, sqrtPriceX96);
     }
@@ -183,8 +196,14 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         // Both currencies are currency0
         uninitializedKey.currency1 = currency0;
 
-        vm.expectRevert(IPoolManager.CurrenciesOutOfOrderOrEqual.selector);
-        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IPoolManager.CurrenciesOutOfOrderOrEqual.selector,
+                Currency.unwrap(currency0),
+                Currency.unwrap(currency0)
+            )
+        );
+        manager.initialize(uninitializedKey, sqrtPriceX96);
     }
 
     function test_initialize_revertsWithSameTokenCombo(uint160 sqrtPriceX96) public {
@@ -194,35 +213,23 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         uninitializedKey.currency1 = currency0;
         uninitializedKey.currency0 = currency1;
 
-        vm.expectRevert(IPoolManager.CurrenciesOutOfOrderOrEqual.selector);
-        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
-    }
-
-    function test_initialize_fetchFeeWhenController(uint24 protocolFee) public {
-        manager.setProtocolFeeController(feeController);
-        feeController.setProtocolFeeForPool(uninitializedKey.toId(), protocolFee);
-
-        uint16 fee0 = protocolFee.getZeroForOneFee();
-        uint16 fee1 = protocolFee.getOneForZeroFee();
-
-        manager.initialize(uninitializedKey, SQRT_PRICE_1_1, ZERO_BYTES);
-
-        (uint160 slot0SqrtPriceX96,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
-        assertEq(slot0SqrtPriceX96, SQRT_PRICE_1_1);
-        if ((fee0 > 1000) || (fee1 > 1000)) {
-            assertEq(slot0ProtocolFee, 0);
-        } else {
-            assertEq(slot0ProtocolFee, protocolFee);
-        }
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IPoolManager.CurrenciesOutOfOrderOrEqual.selector,
+                Currency.unwrap(currency1),
+                Currency.unwrap(currency0)
+            )
+        );
+        manager.initialize(uninitializedKey, sqrtPriceX96);
     }
 
     function test_initialize_revertsWhenPoolAlreadyInitialized(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
-        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+        manager.initialize(uninitializedKey, sqrtPriceX96);
         vm.expectRevert(Pool.PoolAlreadyInitialized.selector);
-        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+        manager.initialize(uninitializedKey, sqrtPriceX96);
     }
 
     function test_initialize_failsWithIncorrectSelectors() public {
@@ -239,12 +246,12 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
         // Fails at beforeInitialize hook.
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.initialize(uninitializedKey, SQRT_PRICE_1_1, ZERO_BYTES);
+        manager.initialize(uninitializedKey, SQRT_PRICE_1_1);
 
         // Fail at afterInitialize hook.
         mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, mockHooks.beforeInitialize.selector);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.initialize(uninitializedKey, SQRT_PRICE_1_1, ZERO_BYTES);
+        manager.initialize(uninitializedKey, SQRT_PRICE_1_1);
     }
 
     function test_initialize_succeedsWithCorrectSelectors() public {
@@ -259,6 +266,8 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, mockHooks.beforeInitialize.selector);
         mockHooks.setReturnValue(mockHooks.afterInitialize.selector, mockHooks.afterInitialize.selector);
 
+        int24 tick = TickMath.getTickAtSqrtPrice(SQRT_PRICE_1_1);
+
         vm.expectEmit(true, true, true, true);
         emit Initialize(
             uninitializedKey.toId(),
@@ -266,20 +275,22 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             uninitializedKey.currency1,
             uninitializedKey.fee,
             uninitializedKey.tickSpacing,
-            uninitializedKey.hooks
+            uninitializedKey.hooks,
+            SQRT_PRICE_1_1,
+            tick
         );
 
-        manager.initialize(uninitializedKey, SQRT_PRICE_1_1, ZERO_BYTES);
+        manager.initialize(uninitializedKey, SQRT_PRICE_1_1);
     }
 
     function test_initialize_failsIfTickSpaceTooLarge(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
-        uninitializedKey.tickSpacing = manager.MAX_TICK_SPACING() + 1;
+        uninitializedKey.tickSpacing = TickMath.MAX_TICK_SPACING + 1;
 
-        vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooLarge.selector));
-        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+        vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooLarge.selector, uninitializedKey.tickSpacing));
+        manager.initialize(uninitializedKey, sqrtPriceX96);
     }
 
     function test_initialize_failsIfTickSpaceZero(uint160 sqrtPriceX96) public {
@@ -288,8 +299,8 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
         uninitializedKey.tickSpacing = 0;
 
-        vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooSmall.selector));
-        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+        vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooSmall.selector, uninitializedKey.tickSpacing));
+        manager.initialize(uninitializedKey, sqrtPriceX96);
     }
 
     function test_initialize_failsIfTickSpaceNeg(uint160 sqrtPriceX96) public {
@@ -298,96 +309,12 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
         uninitializedKey.tickSpacing = -1;
 
-        vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooSmall.selector));
-        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
-    }
-
-    function test_initialize_succeedsWithOutOfBoundsFeeController(uint160 sqrtPriceX96) public {
-        // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
-
-        manager.setProtocolFeeController(outOfBoundsFeeController);
-        // expect initialize to succeed even though the controller reverts
-        vm.expectEmit(true, true, true, true);
-        emit Initialize(
-            uninitializedKey.toId(),
-            uninitializedKey.currency0,
-            uninitializedKey.currency1,
-            uninitializedKey.fee,
-            uninitializedKey.tickSpacing,
-            uninitializedKey.hooks
-        );
-        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
-        // protocol fees should default to 0
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
-        assertEq(slot0ProtocolFee, 0);
-    }
-
-    function test_initialize_succeedsWithRevertingFeeController(uint160 sqrtPriceX96) public {
-        // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
-
-        manager.setProtocolFeeController(revertingFeeController);
-        // expect initialize to succeed even though the controller reverts
-        vm.expectEmit(true, true, true, true);
-        emit Initialize(
-            uninitializedKey.toId(),
-            uninitializedKey.currency0,
-            uninitializedKey.currency1,
-            uninitializedKey.fee,
-            uninitializedKey.tickSpacing,
-            uninitializedKey.hooks
-        );
-        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
-        // protocol fees should default to 0
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
-        assertEq(slot0ProtocolFee, 0);
-    }
-
-    function test_initialize_succeedsWithOverflowFeeController(uint160 sqrtPriceX96) public {
-        // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
-
-        manager.setProtocolFeeController(overflowFeeController);
-        // expect initialize to succeed
-        vm.expectEmit(true, true, true, true);
-        emit Initialize(
-            uninitializedKey.toId(),
-            uninitializedKey.currency0,
-            uninitializedKey.currency1,
-            uninitializedKey.fee,
-            uninitializedKey.tickSpacing,
-            uninitializedKey.hooks
-        );
-        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
-        // protocol fees should default to 0
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
-        assertEq(slot0ProtocolFee, 0);
-    }
-
-    function test_initialize_succeedsWithWrongReturnSizeFeeController(uint160 sqrtPriceX96) public {
-        // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
-
-        manager.setProtocolFeeController(invalidReturnSizeFeeController);
-        // expect initialize to succeed
-        vm.expectEmit(true, true, true, true);
-        emit Initialize(
-            uninitializedKey.toId(),
-            uninitializedKey.currency0,
-            uninitializedKey.currency1,
-            uninitializedKey.fee,
-            uninitializedKey.tickSpacing,
-            uninitializedKey.hooks
-        );
-        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
-        // protocol fees should default to 0
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
-        assertEq(slot0ProtocolFee, 0);
+        vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooSmall.selector, uninitializedKey.tickSpacing));
+        manager.initialize(uninitializedKey, sqrtPriceX96);
     }
 
     function test_initialize_gas() public {
-        manager.initialize(uninitializedKey, SQRT_PRICE_1_1, ZERO_BYTES);
-        snapLastCall("initialize");
+        manager.initialize(uninitializedKey, SQRT_PRICE_1_1);
+        vm.snapshotGasLastCall("initialize");
     }
 }

@@ -55,6 +55,7 @@ contract FeeTakingHook is BaseTestHooks {
         PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams calldata, /* params **/
         BalanceDelta delta,
+        BalanceDelta,
         bytes calldata /* hookData **/
     ) external override onlyPoolManager returns (bytes4, BalanceDelta) {
         assert(delta.amount0() >= 0 && delta.amount1() >= 0);
@@ -73,6 +74,7 @@ contract FeeTakingHook is BaseTestHooks {
         PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams calldata, /* params **/
         BalanceDelta delta,
+        BalanceDelta,
         bytes calldata /* hookData **/
     ) external override onlyPoolManager returns (bytes4, BalanceDelta) {
         assert(delta.amount0() <= 0 && delta.amount1() <= 0);

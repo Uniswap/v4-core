@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
+import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
@@ -42,7 +42,7 @@ contract PoolSwapTest is PoolTestBase {
         );
 
         uint256 ethBalance = address(this).balance;
-        if (ethBalance > 0) CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
+        if (ethBalance > 0) CurrencyLibrary.ADDRESS_ZERO.transfer(msg.sender, ethBalance);
     }
 
     function unlockCallback(bytes calldata rawData) external returns (bytes memory) {

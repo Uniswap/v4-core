@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity ^0.8.20;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
 import {FullMath} from "./FullMath.sol";
 import {SqrtPriceMath} from "./SqrtPriceMath.sol";
@@ -7,7 +7,9 @@ import {SqrtPriceMath} from "./SqrtPriceMath.sol";
 /// @title Computes the result of a swap within ticks
 /// @notice Contains methods for computing the result of a swap within a single tick price range, i.e., a single tick.
 library SwapMath {
-    uint256 internal constant MAX_FEE_PIPS = 1e6;
+    /// @notice the swap fee is represented in hundredths of a bip, so the max is 100%
+    /// @dev the swap fee is the total fee on a swap, including both LP and Protocol fee
+    uint256 internal constant MAX_SWAP_FEE = 1e6;
 
     /// @notice Computes the sqrt price target for the next swap step
     /// @param zeroForOne The direction of the swap, true for currency0 to currency1, false for currency1 to currency0
@@ -20,13 +22,15 @@ library SwapMath {
         pure
         returns (uint160 sqrtPriceTargetX96)
     {
-        assembly {
+        assembly ("memory-safe") {
             // a flag to toggle between sqrtPriceNextX96 and sqrtPriceLimitX96
             // when zeroForOne == true, nextOrLimit reduces to sqrtPriceNextX96 >= sqrtPriceLimitX96
             // sqrtPriceTargetX96 = max(sqrtPriceNextX96, sqrtPriceLimitX96)
             // when zeroForOne == false, nextOrLimit reduces to sqrtPriceNextX96 < sqrtPriceLimitX96
             // sqrtPriceTargetX96 = min(sqrtPriceNextX96, sqrtPriceLimitX96)
-            let nextOrLimit := xor(lt(sqrtPriceNextX96, sqrtPriceLimitX96), zeroForOne)
+            sqrtPriceNextX96 := and(sqrtPriceNextX96, 0xffffffffffffffffffffffffffffffffffffffff)
+            sqrtPriceLimitX96 := and(sqrtPriceLimitX96, 0xffffffffffffffffffffffffffffffffffffffff)
+            let nextOrLimit := xor(lt(sqrtPriceNextX96, sqrtPriceLimitX96), and(zeroForOne, 0x1))
             let symDiff := xor(sqrtPriceNextX96, sqrtPriceLimitX96)
             sqrtPriceTargetX96 := xor(sqrtPriceLimitX96, mul(symDiff, nextOrLimit))
         }
@@ -43,6 +47,7 @@ library SwapMath {
     /// @return amountIn The amount to be swapped in, of either currency0 or currency1, based on the direction of the swap
     /// @return amountOut The amount to be received, of either currency0 or currency1, based on the direction of the swap
     /// @return feeAmount The amount of input that will be taken as a fee
+    /// @dev feePips must be no larger than MAX_SWAP_FEE for this function. We ensure that before setting a fee using LPFeeLibrary.isValid.
     function computeSwapStep(
         uint160 sqrtPriceCurrentX96,
         uint160 sqrtPriceTargetX96,
@@ -57,23 +62,22 @@ library SwapMath {
 
             if (exactIn) {
                 uint256 amountRemainingLessFee =
-                    FullMath.mulDiv(uint256(-amountRemaining), MAX_FEE_PIPS - _feePips, MAX_FEE_PIPS);
+                    FullMath.mulDiv(uint256(-amountRemaining), MAX_SWAP_FEE - _feePips, MAX_SWAP_FEE);
                 amountIn = zeroForOne
                     ? SqrtPriceMath.getAmount0Delta(sqrtPriceTargetX96, sqrtPriceCurrentX96, liquidity, true)
                     : SqrtPriceMath.getAmount1Delta(sqrtPriceCurrentX96, sqrtPriceTargetX96, liquidity, true);
                 if (amountRemainingLessFee >= amountIn) {
                     // `amountIn` is capped by the target price
                     sqrtPriceNextX96 = sqrtPriceTargetX96;
-                    feeAmount = _feePips == MAX_FEE_PIPS
-                        ? amountIn
-                        : FullMath.mulDivRoundingUp(amountIn, _feePips, MAX_FEE_PIPS - _feePips);
+                    feeAmount = _feePips == MAX_SWAP_FEE
+                        ? amountIn // amountIn is always 0 here, as amountRemainingLessFee == 0 and amountRemainingLessFee >= amountIn
+                        : FullMath.mulDivRoundingUp(amountIn, _feePips, MAX_SWAP_FEE - _feePips);
                 } else {
+                    // exhaust the remaining amount
+                    amountIn = amountRemainingLessFee;
                     sqrtPriceNextX96 = SqrtPriceMath.getNextSqrtPriceFromInput(
                         sqrtPriceCurrentX96, liquidity, amountRemainingLessFee, zeroForOne
                     );
-                    amountIn = zeroForOne
-                        ? SqrtPriceMath.getAmount0Delta(sqrtPriceNextX96, sqrtPriceCurrentX96, liquidity, true)
-                        : SqrtPriceMath.getAmount1Delta(sqrtPriceCurrentX96, sqrtPriceNextX96, liquidity, true);
                     // we didn't reach the target, so take the remainder of the maximum input as fee
                     feeAmount = uint256(-amountRemaining) - amountIn;
                 }
@@ -96,8 +100,8 @@ library SwapMath {
                 amountIn = zeroForOne
                     ? SqrtPriceMath.getAmount0Delta(sqrtPriceNextX96, sqrtPriceCurrentX96, liquidity, true)
                     : SqrtPriceMath.getAmount1Delta(sqrtPriceCurrentX96, sqrtPriceNextX96, liquidity, true);
-                // `feePips` cannot be `MAX_FEE_PIPS` for exact out
-                feeAmount = FullMath.mulDivRoundingUp(amountIn, _feePips, MAX_FEE_PIPS - _feePips);
+                // `feePips` cannot be `MAX_SWAP_FEE` for exact out
+                feeAmount = FullMath.mulDivRoundingUp(amountIn, _feePips, MAX_SWAP_FEE - _feePips);
             }
         }
     }

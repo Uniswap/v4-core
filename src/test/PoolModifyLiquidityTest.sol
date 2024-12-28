@@ -5,7 +5,6 @@ import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {PoolIdLibrary} from "../types/PoolId.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
@@ -17,7 +16,6 @@ contract PoolModifyLiquidityTest is PoolTestBase {
     using CurrencySettler for Currency;
     using Hooks for IHooks;
     using LPFeeLibrary for uint24;
-    using PoolIdLibrary for PoolKey;
     using StateLibrary for IPoolManager;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
@@ -53,7 +51,7 @@ contract PoolModifyLiquidityTest is PoolTestBase {
 
         uint256 ethBalance = address(this).balance;
         if (ethBalance > 0) {
-            CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
+            CurrencyLibrary.ADDRESS_ZERO.transfer(msg.sender, ethBalance);
         }
     }
 
@@ -62,15 +60,15 @@ contract PoolModifyLiquidityTest is PoolTestBase {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        uint128 liquidityBefore = manager.getPosition(
+        (uint128 liquidityBefore,,) = manager.getPositionInfo(
             data.key.toId(), address(this), data.params.tickLower, data.params.tickUpper, data.params.salt
-        ).liquidity;
+        );
 
         (BalanceDelta delta,) = manager.modifyLiquidity(data.key, data.params, data.hookData);
 
-        uint128 liquidityAfter = manager.getPosition(
+        (uint128 liquidityAfter,,) = manager.getPositionInfo(
             data.key.toId(), address(this), data.params.tickLower, data.params.tickUpper, data.params.salt
-        ).liquidity;
+        );
 
         (,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender, address(this));
         (,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender, address(this));
