@@ -1,0 +1,57 @@
+name: Release
+on:
+  # manual trigger
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: release
+    runs-on:
+      group: npm-deploy
+    environment:
+      name: release
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - name: Load secret
+        uses: 1password/load-secrets-action@581a835fb51b8e7ec56b71cf2ffddd7e68bb25e0
+        with:
+          # Export loaded secrets as environment variables
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          # You may need to change this to your vault name and secret name
+          # Refer to it by calling env.NPM_TOKEN
+          # This token is also limited by IP to ONLY work on the runner
+          NPM_TOKEN: op://npm-deploy/npm-runner-token/secret
+
+      - name: Checkout
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
+
+      - name: Setup Node
+        uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7
+        with:
+          cache: yarn
+          node-version: 18
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: |
+          yarn install --immutable --immutable-cache
+          git submodule update --init --recursive
+
+      - name: Compile
+        run: yarn compile
+
+      - name: Release
+        env:
+          NPM_CONFIG_USERCONFIG: /dev/null
+          NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc && yarn publish
