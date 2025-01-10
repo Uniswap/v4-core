@@ -34,7 +34,7 @@ jobs:
         with:
           cache: yarn
           node-version: 18
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
