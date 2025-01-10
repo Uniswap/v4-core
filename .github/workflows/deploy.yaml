@@ -47,7 +47,7 @@ jobs:
           git submodule update --init --recursive
 
       - name: Compile
-        run: yarn install --frozen-lockfile
+        run: forge install
 
       - name: Release
         env:
