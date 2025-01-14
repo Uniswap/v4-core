@@ -1,6 +1,6 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
 
 /// @notice Parses bytes returned from hooks and the byte selector used to check return selectors from hooks.
 /// @dev parseSelector also is used to parse the expected selector
@@ -8,21 +8,21 @@ pragma solidity ^0.8.20;
 library ParseBytes {
     function parseSelector(bytes memory result) internal pure returns (bytes4 selector) {
         // equivalent: (selector,) = abi.decode(result, (bytes4, int256));
-        assembly {
+        assembly ("memory-safe") {
             selector := mload(add(result, 0x20))
         }
     }
 
     function parseFee(bytes memory result) internal pure returns (uint24 lpFee) {
         // equivalent: (,, lpFee) = abi.decode(result, (bytes4, int256, uint24));
-        assembly {
+        assembly ("memory-safe") {
             lpFee := mload(add(result, 0x60))
         }
     }
 
     function parseReturnDelta(bytes memory result) internal pure returns (int256 hookReturn) {
         // equivalent: (, hookReturnDelta) = abi.decode(result, (bytes4, int256));
-        assembly {
+        assembly ("memory-safe") {
             hookReturn := mload(add(result, 0x40))
         }
     }

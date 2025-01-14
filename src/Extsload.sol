@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.6.0;
+pragma solidity ^0.8.0;
 
 import {IExtsload} from "./interfaces/IExtsload.sol";
 
@@ -7,38 +7,50 @@ import {IExtsload} from "./interfaces/IExtsload.sol";
 /// https://eips.ethereum.org/EIPS/eip-2330#rationale
 abstract contract Extsload is IExtsload {
     /// @inheritdoc IExtsload
-    function extsload(bytes32 slot) external view returns (bytes32 value) {
-        /// @solidity memory-safe-assembly
-        assembly {
-            value := sload(slot)
+    function extsload(bytes32 slot) external view returns (bytes32) {
+        assembly ("memory-safe") {
+            mstore(0, sload(slot))
+            return(0, 0x20)
         }
     }
 
     /// @inheritdoc IExtsload
-    function extsload(bytes32 startSlot, uint256 nSlots) external view returns (bytes memory) {
-        bytes memory value = new bytes(32 * nSlots);
-
-        /// @solidity memory-safe-assembly
-        assembly {
-            for { let i := 0 } lt(i, nSlots) { i := add(i, 1) } {
-                mstore(add(value, mul(add(i, 1), 32)), sload(add(startSlot, i)))
+    function extsload(bytes32 startSlot, uint256 nSlots) external view returns (bytes32[] memory) {
+        assembly ("memory-safe") {
+            let memptr := mload(0x40)
+            let start := memptr
+            // A left bit-shift of 5 is equivalent to multiplying by 32 but costs less gas.
+            let length := shl(5, nSlots)
+            // The abi offset of dynamic array in the returndata is 32.
+            mstore(memptr, 0x20)
+            // Store the length of the array returned
+            mstore(add(memptr, 0x20), nSlots)
+            // update memptr to the first location to hold a result
+            memptr := add(memptr, 0x40)
+            let end := add(memptr, length)
+            for {} 1 {} {
+                mstore(memptr, sload(startSlot))
+                memptr := add(memptr, 0x20)
+                startSlot := add(startSlot, 1)
+                if iszero(lt(memptr, end)) { break }
             }
+            return(start, sub(end, start))
         }
-
-        return value;
     }
 
     /// @inheritdoc IExtsload
     function extsload(bytes32[] calldata slots) external view returns (bytes32[] memory) {
-        // since the function is external and enters a new call context and exits right
-        // after execution, Solidity's memory management convention can be disregarded
-        // and a direct slice of memory can be returned
         assembly ("memory-safe") {
-            // abi offset for dynamic array
-            mstore(0, 0x20)
-            mstore(0x20, slots.length)
-            let end := add(0x40, shl(5, slots.length))
-            let memptr := 0x40
+            let memptr := mload(0x40)
+            let start := memptr
+            // for abi encoding the response - the array will be found at 0x20
+            mstore(memptr, 0x20)
+            // next we store the length of the return array
+            mstore(add(memptr, 0x20), slots.length)
+            // update memptr to the first location to hold an array entry
+            memptr := add(memptr, 0x40)
+            // A left bit-shift of 5 is equivalent to multiplying by 32 but costs less gas.
+            let end := add(memptr, shl(5, slots.length))
             let calldataptr := slots.offset
             for {} 1 {} {
                 mstore(memptr, sload(calldataload(calldataptr)))
@@ -46,7 +58,7 @@ abstract contract Extsload is IExtsload {
                 calldataptr := add(calldataptr, 0x20)
                 if iszero(lt(memptr, end)) { break }
             }
-            return(0, end)
+            return(start, sub(end, start))
         }
     }
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.24;
+pragma solidity ^0.8.24;
 
 import {IExttload} from "./interfaces/IExttload.sol";
 
@@ -7,24 +7,26 @@ import {IExttload} from "./interfaces/IExttload.sol";
 /// https://eips.ethereum.org/EIPS/eip-2330#rationale
 abstract contract Exttload is IExttload {
     /// @inheritdoc IExttload
-    function exttload(bytes32 slot) external view returns (bytes32 value) {
-        /// @solidity memory-safe-assembly
-        assembly {
-            value := tload(slot)
+    function exttload(bytes32 slot) external view returns (bytes32) {
+        assembly ("memory-safe") {
+            mstore(0, tload(slot))
+            return(0, 0x20)
         }
     }
 
     /// @inheritdoc IExttload
     function exttload(bytes32[] calldata slots) external view returns (bytes32[] memory) {
-        // since the function is external and enters a new call context and exits right
-        // after execution, Solidity's memory management convention can be disregarded
-        // and a direct slice of memory can be returned
         assembly ("memory-safe") {
-            // abi offset for dynamic array
-            mstore(0, 0x20)
-            mstore(0x20, slots.length)
-            let end := add(0x40, shl(5, slots.length))
-            let memptr := 0x40
+            let memptr := mload(0x40)
+            let start := memptr
+            // for abi encoding the response - the array will be found at 0x20
+            mstore(memptr, 0x20)
+            // next we store the length of the return array
+            mstore(add(memptr, 0x20), slots.length)
+            // update memptr to the first location to hold an array entry
+            memptr := add(memptr, 0x40)
+            // A left bit-shift of 5 is equivalent to multiplying by 32 but costs less gas.
+            let end := add(memptr, shl(5, slots.length))
             let calldataptr := slots.offset
             for {} 1 {} {
                 mstore(memptr, tload(calldataload(calldataptr)))
@@ -32,7 +34,7 @@ abstract contract Exttload is IExttload {
                 calldataptr := add(calldataptr, 0x20)
                 if iszero(lt(memptr, end)) { break }
             }
-            return(0, end)
+            return(start, sub(end, start))
         }
     }
 }

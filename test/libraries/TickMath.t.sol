@@ -1,21 +1,18 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {TickMathTest} from "src/test/TickMathTest.sol";
 import {TickMath} from "src/libraries/TickMath.sol";
 import {JavascriptFfi} from "test/utils/JavascriptFfi.sol";
 
-contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
-    int24 constant MIN_TICK = -887272;
-    int24 constant MAX_TICK = -MIN_TICK;
+contract TickMathTestTest is Test, JavascriptFfi {
+    int24 constant MIN_TICK = TickMath.MIN_TICK;
+    int24 constant MAX_TICK = TickMath.MAX_TICK;
 
-    uint160 constant MIN_SQRT_PRICE = 4295128739;
-    uint160 constant MAX_SQRT_PRICE = 1461446703485210103287273052203988822378723970342;
-
-    uint160 constant SQRT_PRICE_1_1 = 79228162514264337593543950336;
+    uint160 constant MIN_SQRT_PRICE = TickMath.MIN_SQRT_PRICE;
+    uint160 constant MAX_SQRT_PRICE = TickMath.MAX_SQRT_PRICE;
 
     uint256 constant ONE_PIP = 1e6;
 
@@ -46,18 +43,21 @@ contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
     }
 
     function test_getSqrtPriceAtTick_throwsForInt24Min() public {
-        vm.expectRevert(TickMath.InvalidTick.selector);
-        tickMath.getSqrtPriceAtTick(type(int24).min);
+        int24 tick = type(int24).min;
+        vm.expectRevert(abi.encodeWithSelector(TickMath.InvalidTick.selector, tick));
+        tickMath.getSqrtPriceAtTick(tick);
     }
 
     function test_getSqrtPriceAtTick_throwsForTooLow() public {
-        vm.expectRevert(TickMath.InvalidTick.selector);
-        tickMath.getSqrtPriceAtTick(MIN_TICK - 1);
+        int24 tick = MIN_TICK - 1;
+        vm.expectRevert(abi.encodeWithSelector(TickMath.InvalidTick.selector, tick));
+        tickMath.getSqrtPriceAtTick(tick);
     }
 
     function test_getSqrtPriceAtTick_throwsForTooHigh() public {
-        vm.expectRevert(TickMath.InvalidTick.selector);
-        tickMath.getSqrtPriceAtTick(MAX_TICK + 1);
+        int24 tick = MAX_TICK + 1;
+        vm.expectRevert(abi.encodeWithSelector(TickMath.InvalidTick.selector, tick));
+        tickMath.getSqrtPriceAtTick(tick);
     }
 
     function test_fuzz_getSqrtPriceAtTick_throwsForTooLarge(int24 tick) public {
@@ -66,7 +66,7 @@ contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
         } else {
             tick = int24(bound(tick, type(int24).min, MIN_TICK - 1));
         }
-        vm.expectRevert(TickMath.InvalidTick.selector);
+        vm.expectRevert(abi.encodeWithSelector(TickMath.InvalidTick.selector, tick));
         tickMath.getSqrtPriceAtTick(tick);
     }
 
@@ -103,13 +103,15 @@ contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
     }
 
     function test_getTickAtSqrtPrice_throwsForTooLow() public {
-        vm.expectRevert(TickMath.InvalidSqrtPrice.selector);
-        tickMath.getTickAtSqrtPrice(MIN_SQRT_PRICE - 1);
+        uint160 sqrtPriceX96 = MIN_SQRT_PRICE - 1;
+        vm.expectRevert(abi.encodeWithSelector(TickMath.InvalidSqrtPrice.selector, sqrtPriceX96));
+        tickMath.getTickAtSqrtPrice(sqrtPriceX96);
     }
 
     function test_getTickAtSqrtPrice_throwsForTooHigh() public {
-        vm.expectRevert(TickMath.InvalidSqrtPrice.selector);
-        tickMath.getTickAtSqrtPrice(MAX_SQRT_PRICE);
+        uint160 sqrtPriceX96 = MAX_SQRT_PRICE;
+        vm.expectRevert(abi.encodeWithSelector(TickMath.InvalidSqrtPrice.selector, sqrtPriceX96));
+        tickMath.getTickAtSqrtPrice(sqrtPriceX96);
     }
 
     function test_fuzz_getTickAtSqrtPrice_throwsForInvalid(uint160 sqrtPriceX96, bool gte) public {
@@ -118,7 +120,7 @@ contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
         } else {
             sqrtPriceX96 = uint160(bound(sqrtPriceX96, 0, MIN_SQRT_PRICE - 1));
         }
-        vm.expectRevert(TickMath.InvalidSqrtPrice.selector);
+        vm.expectRevert(abi.encodeWithSelector(TickMath.InvalidSqrtPrice.selector, sqrtPriceX96));
         tickMath.getTickAtSqrtPrice(sqrtPriceX96);
     }
 
@@ -200,26 +202,46 @@ contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
         }
     }
 
+    function test_fuzz_getTickAtSqrtPrice_getSqrtPriceAtTick_relation(int24 tick) public pure {
+        tick = int24(bound(tick, TickMath.MIN_TICK, TickMath.MAX_TICK - 1));
+        int24 nextTick = tick + 1;
+        uint160 priceAtTick = TickMath.getSqrtPriceAtTick(tick);
+        uint160 priceAtNextTick = TickMath.getSqrtPriceAtTick(nextTick);
+
+        // check lowest price of tick
+        assertEq(TickMath.getTickAtSqrtPrice(priceAtTick), tick, "lower price");
+        // check mid price of tick
+        assertEq(
+            TickMath.getTickAtSqrtPrice(uint160((uint256(priceAtTick) + uint256(priceAtNextTick)) / 2)),
+            tick,
+            "mid price"
+        );
+        // check upper price of tick
+        assertEq(TickMath.getTickAtSqrtPrice(priceAtNextTick - 1), tick, "upper price");
+        // check lower price of next tick
+        assertEq(TickMath.getTickAtSqrtPrice(priceAtNextTick), nextTick, "lower price next tick");
+    }
+
     /// @notice Benchmark the gas cost of `getSqrtPriceAtTick`
     function test_getSqrtPriceAtTick_gasCost() public {
-        snapStart("TickMathGetSqrtPriceAtTick");
+        vm.startSnapshotGas("TickMathGetSqrtPriceAtTick");
         unchecked {
             for (int24 tick = -50; tick < 50;) {
                 TickMath.getSqrtPriceAtTick(tick++);
             }
         }
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     /// @notice Benchmark the gas cost of `getTickAtSqrtPrice`
     function test_getTickAtSqrtPrice_gasCost() public {
-        snapStart("TickMathGetTickAtSqrtPrice");
+        vm.startSnapshotGas("TickMathGetTickAtSqrtPrice");
         unchecked {
             uint160 sqrtPriceX96 = 1 << 33;
             for (uint256 i; i++ < 100; sqrtPriceX96 <<= 1) {
                 TickMath.getTickAtSqrtPrice(sqrtPriceX96);
             }
         }
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 }

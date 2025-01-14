@@ -6,11 +6,10 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
-import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
+import {PoolId} from "../types/PoolId.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "../types/BeforeSwapDelta.sol";
 
 contract MockHooks is IHooks {
-    using PoolIdLibrary for PoolKey;
     using Hooks for IHooks;
 
     bytes public beforeInitializeData;
@@ -28,22 +27,14 @@ contract MockHooks is IHooks {
 
     mapping(PoolId => uint16) public lpFees;
 
-    function beforeInitialize(address, PoolKey calldata, uint160, bytes calldata hookData)
-        external
-        override
-        returns (bytes4)
-    {
-        beforeInitializeData = hookData;
+    function beforeInitialize(address, PoolKey calldata, uint160) external override returns (bytes4) {
+        beforeInitializeData = new bytes(123);
         bytes4 selector = MockHooks.beforeInitialize.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function afterInitialize(address, PoolKey calldata, uint160, int24, bytes calldata hookData)
-        external
-        override
-        returns (bytes4)
-    {
-        afterInitializeData = hookData;
+    function afterInitialize(address, PoolKey calldata, uint160, int24) external override returns (bytes4) {
+        afterInitializeData = new bytes(123);
         bytes4 selector = MockHooks.afterInitialize.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
@@ -63,6 +54,7 @@ contract MockHooks is IHooks {
         address,
         PoolKey calldata,
         IPoolManager.ModifyLiquidityParams calldata,
+        BalanceDelta,
         BalanceDelta,
         bytes calldata hookData
     ) external override returns (bytes4, BalanceDelta) {
@@ -86,6 +78,7 @@ contract MockHooks is IHooks {
         address,
         PoolKey calldata,
         IPoolManager.ModifyLiquidityParams calldata,
+        BalanceDelta,
         BalanceDelta,
         bytes calldata hookData
     ) external override returns (bytes4, BalanceDelta) {

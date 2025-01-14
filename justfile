@@ -5,11 +5,11 @@ prep *args: fix (test-forge args)
 
 
 test-forge *args: build-forge
-    forge test --isolate --no-match-path 'test/js-scripts/**/*' {{args}}
+    forge test --isolate {{args}}
 
 
 build-forge *args: install-forge
-    forge build --skip 'test/js-scripts/**/*' {{args}}
+    forge build {{args}}
 
 install-forge:
     forge install

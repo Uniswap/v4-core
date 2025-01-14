@@ -3,7 +3,6 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {stdError} from "forge-std/StdError.sol";
-import {GasSnapshot} from "../lib/forge-gas-snapshot/src/GasSnapshot.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
@@ -22,7 +21,7 @@ contract LiquidityMathRef {
     }
 }
 
-contract TickTest is Test, GasSnapshot {
+contract TickTest is Test {
     using Pool for Pool.State;
 
     int24 constant LOW_TICK_SPACING = 10;
@@ -116,35 +115,35 @@ contract TickTest is Test, GasSnapshot {
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForLowFee() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(LOW_TICK_SPACING);
 
-        assertEq(maxLiquidityPerTick, 1917565579412846627735051215301243);
+        assertEq(maxLiquidityPerTick, 1917559095893846719543856547154045);
         checkCantOverflow(LOW_TICK_SPACING, maxLiquidityPerTick);
     }
 
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForMediumFee() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(MEDIUM_TICK_SPACING);
 
-        assertEq(maxLiquidityPerTick, 11505069308564788430434325881101413); // 113.1 bits
+        assertEq(maxLiquidityPerTick, 11505354575363080317263139282924270);
         checkCantOverflow(MEDIUM_TICK_SPACING, maxLiquidityPerTick);
     }
 
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForHighFee() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(HIGH_TICK_SPACING);
 
-        assertEq(maxLiquidityPerTick, 38347205785278154309959589375342946); // 114.7 bits
+        assertEq(maxLiquidityPerTick, 38345995821606768476828330790147420);
         checkCantOverflow(HIGH_TICK_SPACING, maxLiquidityPerTick);
     }
 
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForMinTickSpacing() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(TickMath.MIN_TICK_SPACING);
 
-        assertEq(maxLiquidityPerTick, 191757530477355301479181766273477); // 126 bits
+        assertEq(maxLiquidityPerTick, 191757530477355301479181766273477);
         checkCantOverflow(TickMath.MIN_TICK_SPACING, maxLiquidityPerTick);
     }
 
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForMaxTickSpacing() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(TickMath.MAX_TICK_SPACING);
 
-        assertEq(maxLiquidityPerTick, 6169404334338910476561253576012511949);
+        assertEq(maxLiquidityPerTick, 6076470837873901133274546561281575204);
         checkCantOverflow(TickMath.MAX_TICK_SPACING, maxLiquidityPerTick);
     }
 
@@ -158,26 +157,26 @@ contract TickTest is Test, GasSnapshot {
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueFor2302() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(2302);
 
-        assertEq(maxLiquidityPerTick, 440854192570431170114173285871668350); // 118 bits
+        assertEq(maxLiquidityPerTick, 440780268032303709149448973357212709);
         checkCantOverflow(2302, maxLiquidityPerTick);
     }
 
     function testTick_tickSpacingToMaxLiquidityPerTick_gasCostMinTickSpacing() public {
-        snapStart("tickSpacingToMaxLiquidityPerTick_gasCostMinTickSpacing");
+        vm.startSnapshotGas("tickSpacingToMaxLiquidityPerTick_gasCostMinTickSpacing");
         tickSpacingToMaxLiquidityPerTick(TickMath.MIN_TICK_SPACING);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function testTick_tickSpacingToMaxLiquidityPerTick_gasCost60TickSpacing() public {
-        snapStart("tickSpacingToMaxLiquidityPerTick_gasCost60TickSpacing");
+        vm.startSnapshotGas("tickSpacingToMaxLiquidityPerTick_gasCost60TickSpacing");
         tickSpacingToMaxLiquidityPerTick(60);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function testTick_tickSpacingToMaxLiquidityPerTick_gasCostMaxTickSpacing() public {
-        snapStart("tickSpacingToMaxLiquidityPerTick_gasCostMaxTickSpacing");
+        vm.startSnapshotGas("tickSpacingToMaxLiquidityPerTick_gasCostMaxTickSpacing");
         tickSpacingToMaxLiquidityPerTick(TickMath.MAX_TICK_SPACING);
-        snapEnd();
+        vm.stopSnapshotGas();
     }
 
     function testTick_getFeeGrowthInside_returnsAllForTwoUninitializedTicksIfTickIsInside() public {

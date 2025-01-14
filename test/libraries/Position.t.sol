@@ -6,14 +6,14 @@ import {Position} from "../../src/libraries/Position.sol";
 import {SafeCast} from "../../src/libraries/SafeCast.sol";
 
 contract PositionTest is Test {
-    using Position for mapping(bytes32 => Position.Info);
+    using Position for mapping(bytes32 => Position.State);
 
-    mapping(bytes32 => Position.Info) internal positions;
+    mapping(bytes32 => Position.State) internal positions;
 
     function test_fuzz_get(address owner, int24 tickLower, int24 tickUpper, bytes32 salt) public view {
         bytes32 positionKey = keccak256(abi.encodePacked(owner, tickLower, tickUpper, salt));
-        Position.Info storage expectedPosition = positions[positionKey];
-        Position.Info storage position = positions.get(owner, tickLower, tickUpper, salt);
+        Position.State storage expectedPosition = positions[positionKey];
+        Position.State storage position = positions.get(owner, tickLower, tickUpper, salt);
         bytes32 expectedPositionSlot;
         bytes32 positionSlot;
         assembly ("memory-safe") {
@@ -25,11 +25,11 @@ contract PositionTest is Test {
 
     function test_fuzz_update(
         int128 liquidityDelta,
-        Position.Info memory pos,
+        Position.State memory pos,
         uint256 newFeeGrowthInside0X128,
         uint256 newFeeGrowthInside1X128
     ) public {
-        Position.Info storage position = positions[0];
+        Position.State storage position = positions[0];
         position.liquidity = pos.liquidity;
         position.feeGrowthInside0LastX128 = pos.feeGrowthInside0LastX128;
         position.feeGrowthInside1LastX128 = pos.feeGrowthInside1LastX128;
@@ -70,5 +70,13 @@ contract PositionTest is Test {
 
         assertEq(position.feeGrowthInside0LastX128, newFeeGrowthInside0X128);
         assertEq(position.feeGrowthInside1LastX128, newFeeGrowthInside1X128);
+    }
+
+    function test_fuzz_calculatePositionKey(address owner, int24 tickLower, int24 tickUpper, bytes32 salt)
+        public
+        pure
+    {
+        bytes32 positionKey = Position.calculatePositionKey(owner, tickLower, tickUpper, salt);
+        assertEq(positionKey, keccak256(abi.encodePacked(owner, tickLower, tickUpper, salt)));
     }
 }

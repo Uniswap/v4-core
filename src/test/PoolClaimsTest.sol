@@ -1,17 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
-import {Currency, CurrencyLibrary} from "../types/Currency.sol";
-import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
+import {Currency} from "../types/Currency.sol";
+import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-import {PoolKey} from "../types/PoolKey.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {SafeCast} from "../libraries/SafeCast.sol";
-import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
+import {CurrencySettler} from "../../test/utils/CurrencySettler.sol";
 
 contract PoolClaimsTest is PoolTestBase {
-    using CurrencyLibrary for Currency;
-    using CurrencySettleTake for Currency;
+    using CurrencySettler for Currency;
     using SafeCast for uint256;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}

@@ -7,20 +7,15 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
-import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
-import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
-import {CurrencyLibrary, Currency} from "../types/Currency.sol";
-import {PoolTestBase} from "./PoolTestBase.sol";
-import {Constants} from "../../test/utils/Constants.sol";
+import {Currency} from "../types/Currency.sol";
 import {Test} from "forge-std/Test.sol";
-import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
+import {CurrencySettler} from "../../test/utils/CurrencySettler.sol";
 import {StateLibrary} from "../libraries/StateLibrary.sol";
 import {TransientStateLibrary} from "../libraries/TransientStateLibrary.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "../types/BeforeSwapDelta.sol";
 
 contract SkipCallsTestHook is BaseTestHooks, Test {
-    using CurrencySettleTake for Currency;
-    using PoolIdLibrary for PoolKey;
+    using CurrencySettler for Currency;
     using Hooks for IHooks;
     using StateLibrary for IPoolManager;
     using TransientStateLibrary for IPoolManager;
@@ -32,23 +27,19 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         manager = _manager;
     }
 
-    function beforeInitialize(address, PoolKey calldata key, uint160 sqrtPriceX96, bytes calldata hookData)
-        external
-        override
-        returns (bytes4)
-    {
+    function beforeInitialize(address, PoolKey calldata key, uint160 sqrtPriceX96) external override returns (bytes4) {
         counter++;
-        _initialize(key, sqrtPriceX96, hookData);
+        _initialize(key, sqrtPriceX96);
         return IHooks.beforeInitialize.selector;
     }
 
-    function afterInitialize(address, PoolKey calldata key, uint160 sqrtPriceX96, int24, bytes calldata hookData)
+    function afterInitialize(address, PoolKey calldata key, uint160 sqrtPriceX96, int24)
         external
         override
         returns (bytes4)
     {
         counter++;
-        _initialize(key, sqrtPriceX96, hookData);
+        _initialize(key, sqrtPriceX96);
         return IHooks.afterInitialize.selector;
     }
 
@@ -67,6 +58,7 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         address,
         PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams calldata params,
+        BalanceDelta,
         BalanceDelta,
         bytes calldata hookData
     ) external override returns (bytes4, BalanceDelta) {
@@ -90,6 +82,7 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         address,
         PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams calldata params,
+        BalanceDelta,
         BalanceDelta,
         bytes calldata hookData
     ) external override returns (bytes4, BalanceDelta) {
@@ -140,10 +133,10 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         return IHooks.afterDonate.selector;
     }
 
-    function _initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData) public {
+    function _initialize(PoolKey memory key, uint160 sqrtPriceX96) public {
         // initialize a new pool with different fee
         key.fee = 2000;
-        IPoolManager(manager).initialize(key, sqrtPriceX96, hookData);
+        IPoolManager(manager).initialize(key, sqrtPriceX96);
     }
 
     function _swap(PoolKey calldata key, IPoolManager.SwapParams memory params, bytes calldata hookData) public {

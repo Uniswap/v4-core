@@ -5,20 +5,16 @@ import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {PoolIdLibrary} from "../types/PoolId.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {LPFeeLibrary} from "../libraries/LPFeeLibrary.sol";
-import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
-import {Constants} from "../../test/utils/Constants.sol";
+import {CurrencySettler} from "../../test/utils/CurrencySettler.sol";
 
 contract PoolModifyLiquidityTestNoChecks is PoolTestBase {
-    using CurrencyLibrary for Currency;
-    using CurrencySettleTake for Currency;
+    using CurrencySettler for Currency;
     using Hooks for IHooks;
     using LPFeeLibrary for uint24;
-    using PoolIdLibrary for PoolKey;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
 
@@ -53,7 +49,7 @@ contract PoolModifyLiquidityTestNoChecks is PoolTestBase {
 
         uint256 ethBalance = address(this).balance;
         if (ethBalance > 0) {
-            CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
+            CurrencyLibrary.ADDRESS_ZERO.transfer(msg.sender, ethBalance);
         }
     }
 

@@ -2,22 +2,19 @@
 pragma solidity ^0.8.20;
 
 import {Hooks} from "../libraries/Hooks.sol";
-import {SafeCast} from "../libraries/SafeCast.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
-import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
+import {CurrencySettler} from "../../test/utils/CurrencySettler.sol";
 import {BaseTestHooks} from "./BaseTestHooks.sol";
-import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
-import {CurrencyLibrary, Currency} from "../types/Currency.sol";
+import {Currency} from "../types/Currency.sol";
 
 contract CustomCurveHook is BaseTestHooks {
     using Hooks for IHooks;
-    using CurrencyLibrary for Currency;
-    using CurrencySettleTake for Currency;
+    using CurrencySettler for Currency;
 
     error AddLiquidityDirectToHook();
 
@@ -55,6 +52,7 @@ contract CustomCurveHook is BaseTestHooks {
         PoolKey calldata, /* key **/
         IPoolManager.ModifyLiquidityParams calldata, /* params **/
         BalanceDelta, /* delta **/
+        BalanceDelta, /* feeDelta **/
         bytes calldata /* hookData **/
     ) external view override onlyPoolManager returns (bytes4, BalanceDelta) {
         revert AddLiquidityDirectToHook();

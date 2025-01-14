@@ -6,7 +6,6 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "../types/BeforeSwapDelta.sol";
-import {LPFeeLibrary} from "../libraries/LPFeeLibrary.sol";
 
 contract DynamicFeesTestHook is BaseTestHooks {
     uint24 internal fee;
@@ -20,11 +19,7 @@ contract DynamicFeesTestHook is BaseTestHooks {
         fee = _fee;
     }
 
-    function afterInitialize(address, PoolKey calldata key, uint160, int24, bytes calldata)
-        external
-        override
-        returns (bytes4)
-    {
+    function afterInitialize(address, PoolKey calldata key, uint160, int24) external override returns (bytes4) {
         manager.updateDynamicLPFee(key, fee);
         return IHooks.afterInitialize.selector;
     }

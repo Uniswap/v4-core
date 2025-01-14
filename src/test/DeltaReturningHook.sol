@@ -2,22 +2,19 @@
 pragma solidity ^0.8.20;
 
 import {Hooks} from "../libraries/Hooks.sol";
-import {SafeCast} from "../libraries/SafeCast.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
+import {CurrencySettler} from "../../test/utils/CurrencySettler.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
+import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
 import {BaseTestHooks} from "./BaseTestHooks.sol";
-import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
-import {CurrencyLibrary, Currency} from "../types/Currency.sol";
+import {Currency} from "../types/Currency.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 
 contract DeltaReturningHook is BaseTestHooks {
     using Hooks for IHooks;
-    using CurrencyLibrary for Currency;
-    using CurrencySettleTake for Currency;
+    using CurrencySettler for Currency;
 
     IPoolManager immutable manager;
 
@@ -92,8 +89,8 @@ contract DeltaReturningHook is BaseTestHooks {
             currency.take(manager, address(this), uint128(delta), false);
         } else {
             uint256 amount = uint256(-int256(delta));
-            if (currency.isNative()) {
-                manager.settle{value: amount}(currency);
+            if (currency.isAddressZero()) {
+                manager.settle{value: amount}();
             } else {
                 currency.settle(manager, address(this), amount, false);
             }

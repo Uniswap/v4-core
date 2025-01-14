@@ -2,7 +2,7 @@
 # Uniswap v4 Core
 
 [![Lint](https://github.com/Uniswap/v4-core/actions/workflows/lint.yml/badge.svg)](https://github.com/Uniswap/v4-core/actions/workflows/lint.yml)
-[![Tests](https://github.com/Uniswap/v4-core/actions/workflows/tests.yml/badge.svg)](https://github.com/Uniswap/v4-core/actions/workflows/tests.yml)
+[![Tests](https://github.com/Uniswap/v4-core/actions/workflows/tests-merge.yml/badge.svg)](https://github.com/Uniswap/v4-core/actions/workflows/tests-merge.yml)
 
 Uniswap v4 is a new automated market maker protocol that provides extensible and customizable pools. `v4-core` hosts the core pool logic for creating pools and executing pool actions like swapping and providing liquidity.
 
@@ -14,11 +14,11 @@ If you’re interested in contributing please see our [contribution guidelines](
 
 ## Whitepaper
 
-A more detailed description of Uniswap v4 Core can be found in the draft of the [Uniswap v4 Core Whitepaper](./docs/whitepaper-v4.pdf).
+A more detailed description of Uniswap v4 Core can be found in the draft of the [Uniswap v4 Core Whitepaper](./docs/whitepaper/whitepaper-v4.pdf).
 
 ## Architecture
 
-`v4-core` uses a singleton-style architecture, where all pool state is managed in the `PoolManager.sol` contract. Pool actions can be taken by acquiring an unlock on the contract and implementing the `unlockCallback` callback to then proceed with any of the following actions on the pools:
+`v4-core` uses a singleton-style architecture, where all pool state is managed in the `PoolManager.sol` contract. Pool actions can be taken after an initial call to `unlock`. Integrators implement the `unlockCallback` and proceed with any of the following actions on the pools:
 
 - `swap`
 - `modifyLiquidity`
@@ -26,6 +26,9 @@ A more detailed description of Uniswap v4 Core can be found in the draft of the 
 - `take`
 - `settle`
 - `mint`
+- `burn`
+
+Note that pool initialization can happen outside the context of unlocking the PoolManager.
 
 Only the net balances owed to the user (positive) or to the pool (negative) are tracked throughout the duration of an unlock. This is the `delta` field held in the unlock state. Any number of actions can be run on the pools, as long as the deltas accumulated during the unlock reach 0 by the unlock’s release. This unlock and call style architecture gives callers maximum flexibility in integrating with the core code.
 
@@ -37,9 +40,7 @@ Additionally, a pool may be initialized with a hook contract, that can implement
 - {before,after}Swap
 - {before,after}Donate
 
-Hooks may also elect to specify fees on swaps, or liquidity withdrawal. Much like the actions above, fees are implemented using callback functions.
-
-The fee values, or callback logic, may be updated by the hooks dependent on their implementation. However _which_ callbacks are executed on a pool, including the type of fee or lack of fee, cannot change after pool initialization.
+The callback logic, may be updated by the hooks dependent on their implementation. However _which_ callbacks are executed on a pool cannot change after pool initialization.
 
 ## Repository Structure
 
@@ -98,10 +99,4 @@ contract MyContract is IUnlockCallback {
 
 ## License
 
-The primary license for Uniswap V4 Core is the Business Source License 1.1 (`BUSL-1.1`), see [LICENSE](https://github.com/Uniswap/v4-core/blob/main/LICENSE). Minus the following exceptions:
-
-- Some [libraries](./src/libraries) have a GPL license
-- Both [FullMath.sol](./src/libraries/FullMath.sol) and [Hooks.sol](./src/libraries/Hooks.sol) have an MIT License
-- [Interfaces](./src/interfaces) and [types](./src/types/) have an MIT license
-
-Each of these files states their license type.
+Uniswap V4 Core is licensed under the Business Source License 1.1 (`BUSL-1.1`), see [BUSL_LICENSE](https://github.com/Uniswap/v4-core/blob/main/licenses/BUSL_LICENSE), and the MIT License (`MIT`), see [MIT_LICENSE](https://github.com/Uniswap/v4-core/blob/main/licenses/MIT_LICENSE). Each file in Uniswap V4 Core states the applicable license type in the header.

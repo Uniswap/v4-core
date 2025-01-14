@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.24;
+pragma solidity 0.8.26;
 
 import {Hooks} from "./libraries/Hooks.sol";
 import {Pool} from "./libraries/Pool.sol";
@@ -15,15 +15,16 @@ import {IPoolManager} from "./interfaces/IPoolManager.sol";
 import {IUnlockCallback} from "./interfaces/callback/IUnlockCallback.sol";
 import {ProtocolFees} from "./ProtocolFees.sol";
 import {ERC6909Claims} from "./ERC6909Claims.sol";
-import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
-import {BalanceDelta, BalanceDeltaLibrary, toBalanceDelta} from "./types/BalanceDelta.sol";
+import {PoolId} from "./types/PoolId.sol";
+import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
 import {BeforeSwapDelta} from "./types/BeforeSwapDelta.sol";
 import {Lock} from "./libraries/Lock.sol";
 import {CurrencyDelta} from "./libraries/CurrencyDelta.sol";
-import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
-import {Reserves} from "./libraries/Reserves.sol";
+import {NonzeroDeltaCount} from "./libraries/NonzeroDeltaCount.sol";
+import {CurrencyReserves} from "./libraries/CurrencyReserves.sol";
 import {Extsload} from "./Extsload.sol";
 import {Exttload} from "./Exttload.sol";
+import {CustomRevert} from "./libraries/CustomRevert.sol";
 
 //  4
 //   44
@@ -72,109 +73,71 @@ import {Exttload} from "./Exttload.sol";
 //                             444444444           444
 //                                                  44444   444
 //                                                      444
-/// @notice Holds the state for all pools
 
+/// @title PoolManager
+/// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claims, Extsload, Exttload {
-    using PoolIdLibrary for PoolKey;
     using SafeCast for *;
     using Pool for *;
     using Hooks for IHooks;
-    using Position for mapping(bytes32 => Position.Info);
-    using CurrencyLibrary for Currency;
     using CurrencyDelta for Currency;
     using LPFeeLibrary for uint24;
-    using Reserves for Currency;
+    using CurrencyReserves for Currency;
+    using CustomRevert for bytes4;
 
-    /// @inheritdoc IPoolManager
-    int24 public constant MAX_TICK_SPACING = TickMath.MAX_TICK_SPACING;
+    int24 private constant MAX_TICK_SPACING = TickMath.MAX_TICK_SPACING;
 
-    /// @inheritdoc IPoolManager
-    int24 public constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
+    int24 private constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
 
     mapping(PoolId id => Pool.State) internal _pools;
 
-    constructor(uint256 controllerGasLimit) ProtocolFees(controllerGasLimit) {}
-
-    function _getPool(PoolId id) internal view override returns (Pool.State storage) {
-        return _pools[id];
-    }
-
     /// @notice This will revert if the contract is locked
     modifier onlyWhenUnlocked() {
-        if (!Lock.isUnlocked()) revert ManagerLocked();
+        if (!Lock.isUnlocked()) ManagerLocked.selector.revertWith();
         _;
     }
 
-    /// @inheritdoc IPoolManager
-    function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
-        external
-        override
-        noDelegateCall
-        returns (int24 tick)
-    {
-        // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
-        if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
-        if (key.tickSpacing < MIN_TICK_SPACING) revert TickSpacingTooSmall();
-        if (key.currency0 >= key.currency1) revert CurrenciesOutOfOrderOrEqual();
-        if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
-
-        uint24 lpFee = key.fee.getInitialLPFee();
-
-        key.hooks.beforeInitialize(key, sqrtPriceX96, hookData);
-
-        PoolId id = key.toId();
-        (, uint24 protocolFee) = _fetchProtocolFee(key);
-
-        tick = _pools[id].initialize(sqrtPriceX96, protocolFee, lpFee);
-
-        key.hooks.afterInitialize(key, sqrtPriceX96, tick, hookData);
-
-        // On initialize we emit the key's fee, which tells us all fee settings a pool can have: either a static swap fee or dynamic swap fee and if the hook has enabled swap or withdraw fees.
-        emit Initialize(id, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
-    }
+    constructor(address initialOwner) ProtocolFees(initialOwner) {}
 
     /// @inheritdoc IPoolManager
-    function unlock(bytes calldata data) external override noDelegateCall returns (bytes memory result) {
-        if (Lock.isUnlocked()) revert AlreadyUnlocked();
+    function unlock(bytes calldata data) external override returns (bytes memory result) {
+        if (Lock.isUnlocked()) AlreadyUnlocked.selector.revertWith();
 
         Lock.unlock();
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = IUnlockCallback(msg.sender).unlockCallback(data);
 
-        if (NonZeroDeltaCount.read() != 0) revert CurrencyNotSettled();
+        if (NonzeroDeltaCount.read() != 0) CurrencyNotSettled.selector.revertWith();
         Lock.lock();
     }
 
     /// @inheritdoc IPoolManager
-    function sync(Currency currency) public returns (uint256 balance) {
-        balance = currency.balanceOfSelf();
-        currency.setReserves(balance);
-    }
-
-    function _accountDelta(Currency currency, int128 delta, address target) internal {
-        if (delta == 0) return;
-
-        int256 current = currency.getDelta(target);
-        int256 next = current + delta;
-
-        if (next == 0) {
-            NonZeroDeltaCount.decrement();
-        } else if (current == 0) {
-            NonZeroDeltaCount.increment();
+    function initialize(PoolKey memory key, uint160 sqrtPriceX96) external noDelegateCall returns (int24 tick) {
+        // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
+        if (key.tickSpacing > MAX_TICK_SPACING) TickSpacingTooLarge.selector.revertWith(key.tickSpacing);
+        if (key.tickSpacing < MIN_TICK_SPACING) TickSpacingTooSmall.selector.revertWith(key.tickSpacing);
+        if (key.currency0 >= key.currency1) {
+            CurrenciesOutOfOrderOrEqual.selector.revertWith(
+                Currency.unwrap(key.currency0), Currency.unwrap(key.currency1)
+            );
         }
+        if (!key.hooks.isValidHookAddress(key.fee)) Hooks.HookAddressNotValid.selector.revertWith(address(key.hooks));
 
-        currency.setDelta(target, next);
-    }
+        uint24 lpFee = key.fee.getInitialLPFee();
 
-    /// @dev Accumulates a balance change to a map of currency to balance changes
-    function _accountPoolBalanceDelta(PoolKey memory key, BalanceDelta delta, address target) internal {
-        _accountDelta(key.currency0, delta.amount0(), target);
-        _accountDelta(key.currency1, delta.amount1(), target);
-    }
+        key.hooks.beforeInitialize(key, sqrtPriceX96);
 
-    function _checkPoolInitialized(PoolId id) internal view {
-        if (_pools[id].isNotInitialized()) revert PoolNotInitialized();
+        PoolId id = key.toId();
+
+        tick = _pools[id].initialize(sqrtPriceX96, lpFee);
+
+        // event is emitted before the afterInitialize call to ensure events are always emitted in order
+        // emit all details of a pool key. poolkeys are not saved in storage and must always be provided by the caller
+        // the key's fee may be a static fee or a sentinel to denote a dynamic fee.
+        emit Initialize(id, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks, sqrtPriceX96, tick);
+
+        key.hooks.afterInitialize(key, sqrtPriceX96, tick);
     }
 
     /// @inheritdoc IPoolManager
@@ -182,32 +145,37 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
-    ) external override onlyWhenUnlocked returns (BalanceDelta callerDelta, BalanceDelta feesAccrued) {
+    ) external onlyWhenUnlocked noDelegateCall returns (BalanceDelta callerDelta, BalanceDelta feesAccrued) {
         PoolId id = key.toId();
-        _checkPoolInitialized(id);
+        {
+            Pool.State storage pool = _getPool(id);
+            pool.checkPoolInitialized();
 
-        key.hooks.beforeModifyLiquidity(key, params, hookData);
+            key.hooks.beforeModifyLiquidity(key, params, hookData);
 
-        BalanceDelta principalDelta;
-        (principalDelta, feesAccrued) = _pools[id].modifyLiquidity(
-            Pool.ModifyLiquidityParams({
-                owner: msg.sender,
-                tickLower: params.tickLower,
-                tickUpper: params.tickUpper,
-                liquidityDelta: params.liquidityDelta.toInt128(),
-                tickSpacing: key.tickSpacing,
-                salt: params.salt
-            })
-        );
+            BalanceDelta principalDelta;
+            (principalDelta, feesAccrued) = pool.modifyLiquidity(
+                Pool.ModifyLiquidityParams({
+                    owner: msg.sender,
+                    tickLower: params.tickLower,
+                    tickUpper: params.tickUpper,
+                    liquidityDelta: params.liquidityDelta.toInt128(),
+                    tickSpacing: key.tickSpacing,
+                    salt: params.salt
+                })
+            );
 
-        callerDelta = principalDelta + feesAccrued;
+            // fee delta and principal delta are both accrued to the caller
+            callerDelta = principalDelta + feesAccrued;
+        }
 
-        emit ModifyLiquidity(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
+        // event is emitted before the afterModifyLiquidity call to ensure events are always emitted in order
+        emit ModifyLiquidity(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta, params.salt);
 
-        // if the hook doesnt have the flag to be able to return deltas, hookDelta will always be 0.
         BalanceDelta hookDelta;
-        (callerDelta, hookDelta) = key.hooks.afterModifyLiquidity(key, params, callerDelta, hookData);
+        (callerDelta, hookDelta) = key.hooks.afterModifyLiquidity(key, params, callerDelta, feesAccrued, hookData);
 
+        // if the hook doesn't have the flag to be able to return deltas, hookDelta will always be 0
         if (hookDelta != BalanceDeltaLibrary.ZERO_DELTA) _accountPoolBalanceDelta(key, hookDelta, address(key.hooks));
 
         _accountPoolBalanceDelta(key, callerDelta, msg.sender);
@@ -216,14 +184,14 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     /// @inheritdoc IPoolManager
     function swap(PoolKey memory key, IPoolManager.SwapParams memory params, bytes calldata hookData)
         external
-        override
         onlyWhenUnlocked
+        noDelegateCall
         returns (BalanceDelta swapDelta)
     {
-        if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
-
+        if (params.amountSpecified == 0) SwapAmountCannotBeZero.selector.revertWith();
         PoolId id = key.toId();
-        _checkPoolInitialized(id);
+        Pool.State storage pool = _getPool(id);
+        pool.checkPoolInitialized();
 
         BeforeSwapDelta beforeSwapDelta;
         {
@@ -232,7 +200,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             (amountToSwap, beforeSwapDelta, lpFeeOverride) = key.hooks.beforeSwap(key, params, hookData);
 
             // execute swap, account protocol fees, and emit swap event
+            // _swap is needed to avoid stack too deep error
             swapDelta = _swap(
+                pool,
                 id,
                 Pool.SwapParams({
                     tickSpacing: key.tickSpacing,
@@ -248,22 +218,33 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         BalanceDelta hookDelta;
         (swapDelta, hookDelta) = key.hooks.afterSwap(key, params, swapDelta, hookData, beforeSwapDelta);
 
-        // if the hook doesnt have the flag to be able to return deltas, hookDelta will always be 0
+        // if the hook doesn't have the flag to be able to return deltas, hookDelta will always be 0
         if (hookDelta != BalanceDeltaLibrary.ZERO_DELTA) _accountPoolBalanceDelta(key, hookDelta, address(key.hooks));
 
         _accountPoolBalanceDelta(key, swapDelta, msg.sender);
     }
 
-    // Internal swap function to execute a swap, take protocol fees on input token, and emit the swap event
-    function _swap(PoolId id, Pool.SwapParams memory params, Currency inputCurrency) internal returns (BalanceDelta) {
-        (BalanceDelta delta, uint256 feeForProtocol, uint24 swapFee, Pool.SwapState memory state) =
-            _pools[id].swap(params);
+    /// @notice Internal swap function to execute a swap, take protocol fees on input token, and emit the swap event
+    function _swap(Pool.State storage pool, PoolId id, Pool.SwapParams memory params, Currency inputCurrency)
+        internal
+        returns (BalanceDelta)
+    {
+        (BalanceDelta delta, uint256 amountToProtocol, uint24 swapFee, Pool.SwapResult memory result) =
+            pool.swap(params);
 
-        // The fee is on the input currency.
-        if (feeForProtocol > 0) _updateProtocolFees(inputCurrency, feeForProtocol);
+        // the fee is on the input currency
+        if (amountToProtocol > 0) _updateProtocolFees(inputCurrency, amountToProtocol);
 
+        // event is emitted before the afterSwap call to ensure events are always emitted in order
         emit Swap(
-            id, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee
+            id,
+            msg.sender,
+            delta.amount0(),
+            delta.amount1(),
+            result.sqrtPriceX96,
+            result.liquidity,
+            result.tick,
+            swapFee
         );
 
         return delta;
@@ -272,64 +253,141 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     /// @inheritdoc IPoolManager
     function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
         external
-        override
         onlyWhenUnlocked
+        noDelegateCall
         returns (BalanceDelta delta)
     {
-        PoolId id = key.toId();
-        _checkPoolInitialized(id);
+        PoolId poolId = key.toId();
+        Pool.State storage pool = _getPool(poolId);
+        pool.checkPoolInitialized();
 
         key.hooks.beforeDonate(key, amount0, amount1, hookData);
 
-        delta = _pools[id].donate(amount0, amount1);
+        delta = pool.donate(amount0, amount1);
 
         _accountPoolBalanceDelta(key, delta, msg.sender);
+
+        // event is emitted before the afterDonate call to ensure events are always emitted in order
+        emit Donate(poolId, msg.sender, amount0, amount1);
 
         key.hooks.afterDonate(key, amount0, amount1, hookData);
     }
 
     /// @inheritdoc IPoolManager
-    function take(Currency currency, address to, uint256 amount) external override onlyWhenUnlocked {
+    function sync(Currency currency) external {
+        // address(0) is used for the native currency
+        if (currency.isAddressZero()) {
+            // The reserves balance is not used for native settling, so we only need to reset the currency.
+            CurrencyReserves.resetCurrency();
+        } else {
+            uint256 balance = currency.balanceOfSelf();
+            CurrencyReserves.syncCurrencyAndReserves(currency, balance);
+        }
+    }
+
+    /// @inheritdoc IPoolManager
+    function take(Currency currency, address to, uint256 amount) external onlyWhenUnlocked {
         unchecked {
-            // subtraction must be safe
+            // negation must be safe as amount is not negative
             _accountDelta(currency, -(amount.toInt128()), msg.sender);
             currency.transfer(to, amount);
         }
     }
 
     /// @inheritdoc IPoolManager
-    function settle(Currency currency) external payable override onlyWhenUnlocked returns (uint256 paid) {
-        if (currency.isNative()) {
-            paid = msg.value;
-        } else {
-            if (msg.value > 0) revert NonZeroNativeValue();
-            uint256 reservesBefore = currency.getReserves();
-            uint256 reservesNow = sync(currency);
-            paid = reservesNow - reservesBefore;
-        }
-
-        _accountDelta(currency, paid.toInt128(), msg.sender);
+    function settle() external payable onlyWhenUnlocked returns (uint256) {
+        return _settle(msg.sender);
     }
 
     /// @inheritdoc IPoolManager
-    function mint(address to, uint256 id, uint256 amount) external override onlyWhenUnlocked {
+    function settleFor(address recipient) external payable onlyWhenUnlocked returns (uint256) {
+        return _settle(recipient);
+    }
+
+    /// @inheritdoc IPoolManager
+    function clear(Currency currency, uint256 amount) external onlyWhenUnlocked {
+        int256 current = currency.getDelta(msg.sender);
+        // Because input is `uint256`, only positive amounts can be cleared.
+        int128 amountDelta = amount.toInt128();
+        if (amountDelta != current) MustClearExactPositiveDelta.selector.revertWith();
+        // negation must be safe as amountDelta is positive
         unchecked {
-            // subtraction must be safe
-            _accountDelta(CurrencyLibrary.fromId(id), -(amount.toInt128()), msg.sender);
-            _mint(to, id, amount);
+            _accountDelta(currency, -(amountDelta), msg.sender);
         }
     }
 
     /// @inheritdoc IPoolManager
-    function burn(address from, uint256 id, uint256 amount) external override onlyWhenUnlocked {
-        _accountDelta(CurrencyLibrary.fromId(id), amount.toInt128(), msg.sender);
-        _burnFrom(from, id, amount);
+    function mint(address to, uint256 id, uint256 amount) external onlyWhenUnlocked {
+        unchecked {
+            Currency currency = CurrencyLibrary.fromId(id);
+            // negation must be safe as amount is not negative
+            _accountDelta(currency, -(amount.toInt128()), msg.sender);
+            _mint(to, currency.toId(), amount);
+        }
     }
 
+    /// @inheritdoc IPoolManager
+    function burn(address from, uint256 id, uint256 amount) external onlyWhenUnlocked {
+        Currency currency = CurrencyLibrary.fromId(id);
+        _accountDelta(currency, amount.toInt128(), msg.sender);
+        _burnFrom(from, currency.toId(), amount);
+    }
+
+    /// @inheritdoc IPoolManager
     function updateDynamicLPFee(PoolKey memory key, uint24 newDynamicLPFee) external {
-        if (!key.fee.isDynamicFee() || msg.sender != address(key.hooks)) revert UnauthorizedDynamicLPFeeUpdate();
+        if (!key.fee.isDynamicFee() || msg.sender != address(key.hooks)) {
+            UnauthorizedDynamicLPFeeUpdate.selector.revertWith();
+        }
         newDynamicLPFee.validate();
         PoolId id = key.toId();
         _pools[id].setLPFee(newDynamicLPFee);
+    }
+
+    // if settling native, integrators should still call `sync` first to avoid DoS attack vectors
+    function _settle(address recipient) internal returns (uint256 paid) {
+        Currency currency = CurrencyReserves.getSyncedCurrency();
+
+        // if not previously synced, or the syncedCurrency slot has been reset, expects native currency to be settled
+        if (currency.isAddressZero()) {
+            paid = msg.value;
+        } else {
+            if (msg.value > 0) NonzeroNativeValue.selector.revertWith();
+            // Reserves are guaranteed to be set because currency and reserves are always set together
+            uint256 reservesBefore = CurrencyReserves.getSyncedReserves();
+            uint256 reservesNow = currency.balanceOfSelf();
+            paid = reservesNow - reservesBefore;
+            CurrencyReserves.resetCurrency();
+        }
+
+        _accountDelta(currency, paid.toInt128(), recipient);
+    }
+
+    /// @notice Adds a balance delta in a currency for a target address
+    function _accountDelta(Currency currency, int128 delta, address target) internal {
+        if (delta == 0) return;
+
+        (int256 previous, int256 next) = currency.applyDelta(target, delta);
+
+        if (next == 0) {
+            NonzeroDeltaCount.decrement();
+        } else if (previous == 0) {
+            NonzeroDeltaCount.increment();
+        }
+    }
+
+    /// @notice Accounts the deltas of 2 currencies to a target address
+    function _accountPoolBalanceDelta(PoolKey memory key, BalanceDelta delta, address target) internal {
+        _accountDelta(key.currency0, delta.amount0(), target);
+        _accountDelta(key.currency1, delta.amount1(), target);
+    }
+
+    /// @notice Implementation of the _getPool function defined in ProtocolFees
+    function _getPool(PoolId id) internal view override returns (Pool.State storage) {
+        return _pools[id];
+    }
+
+    /// @notice Implementation of the _isUnlocked function defined in ProtocolFees
+    function _isUnlocked() internal view override returns (bool) {
+        return Lock.isUnlocked();
     }
 }

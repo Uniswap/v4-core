@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
+import {PoolId} from "../src/types/PoolId.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
 import {LPFeeLibrary} from "../src/libraries/LPFeeLibrary.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
@@ -13,16 +13,14 @@ import {PoolKey} from "../src/types/PoolKey.sol";
 import {PoolManager} from "../src/PoolManager.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {DynamicReturnFeeTestHook} from "../src/test/DynamicReturnFeeTestHook.sol";
-import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
-import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {Currency} from "../src/types/Currency.sol";
+import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {FullMath} from "../src/libraries/FullMath.sol";
 import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 
-contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
-    using PoolIdLibrary for PoolKey;
+contract TestDynamicReturnFees is Test, Deployers {
     using StateLibrary for IPoolManager;
     using LPFeeLibrary for uint24;
 
@@ -32,7 +30,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
 
     event Swap(
         PoolId indexed poolId,
-        address sender,
+        address indexed sender,
         int128 amount0,
         int128 amount1,
         uint160 sqrtPriceX96,
@@ -48,14 +46,9 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         deployFreshManagerAndRouters();
         dynamicReturnFeesHook.setManager(IPoolManager(manager));
 
-        (currency0, currency1) = deployMintAndApprove2Currencies();
+        deployMintAndApprove2Currencies();
         (key,) = initPoolAndAddLiquidity(
-            currency0,
-            currency1,
-            IHooks(address(dynamicReturnFeesHook)),
-            LPFeeLibrary.DYNAMIC_FEE_FLAG,
-            SQRT_PRICE_1_1,
-            ZERO_BYTES
+            currency0, currency1, IHooks(address(dynamicReturnFeesHook)), LPFeeLibrary.DYNAMIC_FEE_FLAG, SQRT_PRICE_1_1
         );
     }
 
@@ -68,7 +61,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         int256 amountSpecified = -10000;
         BalanceDelta result;
         if (actualFee > LPFeeLibrary.MAX_LP_FEE) {
-            vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
+            vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, actualFee));
             result = swap(key, true, amountSpecified, ZERO_BYTES);
             return;
         } else {
@@ -101,14 +94,14 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 123);
 
         swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
-        snapLastCall("swap with return dynamic fee");
+        vm.snapshotGasLastCall("swap with return dynamic fee");
 
         assertEq(_fetchPoolSwapFee(key), 0);
     }
 
     function test_dynamicReturnSwapFee_initializeZeroSwapFee() public {
         key.tickSpacing = 30;
-        manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
+        manager.initialize(key, SQRT_PRICE_1_1);
         assertEq(_fetchPoolSwapFee(key), 0);
     }
 
@@ -116,9 +109,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         key.fee = 3000; // static fee
         dynamicReturnFeesHook.setFee(1000); // 0.10% fee is NOT used because the pool has a static fee
 
-        initPoolAndAddLiquidity(
-            currency0, currency1, IHooks(address(dynamicReturnFeesHook)), 3000, SQRT_PRICE_1_1, ZERO_BYTES
-        );
+        initPoolAndAddLiquidity(currency0, currency1, IHooks(address(dynamicReturnFeesHook)), 3000, SQRT_PRICE_1_1);
         assertEq(_fetchPoolSwapFee(key), 3000);
 
         // despite returning a valid swap fee (1000), the static fee is used
@@ -137,7 +128,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
 
         // create a new pool with an initial fee of 123
         key.tickSpacing = 30;
-        manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
+        manager.initialize(key, SQRT_PRICE_1_1);
         modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
         uint24 initialFee = 123;
         dynamicReturnFeesHook.forcePoolFeeUpdate(key, initialFee);
@@ -157,15 +148,16 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         assertEq(_fetchPoolSwapFee(key), initialFee);
     }
 
-    function test_dynamicReturnSwapFee_revertIfFeeTooLarge() public {
+    function test_dynamicReturnSwapFee_revertIfLPFeeTooLarge() public {
         assertEq(_fetchPoolSwapFee(key), 0);
 
         // hook adds the override flag
-        dynamicReturnFeesHook.setFee(1000001);
+        uint24 fee = 1000001;
+        dynamicReturnFeesHook.setFee(fee);
 
         // a large fee is not used
         int256 amountSpecified = -10000;
-        vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
+        vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee));
         swap(key, true, amountSpecified, ZERO_BYTES);
     }
 
