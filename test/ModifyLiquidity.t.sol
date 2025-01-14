@@ -19,6 +19,8 @@ import {Fuzzers} from "../src/test/Fuzzers.sol";
 import {TickMath} from "src/libraries/TickMath.sol";
 import {toBalanceDelta} from "src/types/BalanceDelta.sol";
 import {Logger} from "./utils/Logger.sol";
+import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
+import "forge-std/console2.sol";
 
 contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers {
     using StateLibrary for IPoolManager;
@@ -311,5 +313,119 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers 
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
         vm.snapshotGasLastCall("add liquidity to already existing position with salt");
+    }
+
+    /// @dev verify that liquidity positions are not impacted by m02
+    /// i.e. slot0.tick = -61 and slot0.sqrtPriceX96 = sqrtPriceAtTick(-60)
+    /// a user cannot adjust slot0.sqrtPriceX96 to withdraw 2 tokens on the range [-120, -60]
+    /// because a small trade will realign the tick to -60
+    function test_modifyLiquidity_m02_tickUpper() public {
+        assertEq(simpleKey.tickSpacing, 60);
+        LIQ_PARAM_SALT.liquidityDelta = 10_000e18; // add a lot of liquidity
+
+        // Add to range [-120, 120]
+        modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
+
+        // Add to range [-120, -60]
+        uint256 balance0Before = currency0.balanceOfSelf();
+        uint256 balance1Before = currency1.balanceOfSelf();
+        LIQ_PARAM_SALT.tickLower = -120;
+        LIQ_PARAM_SALT.tickUpper = -60;
+        LIQ_PARAM_SALT.liquidityDelta = 1e18;
+        modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
+
+        // paid token1
+        assertGt(balance1Before, currency1.balanceOfSelf());
+        // did not pay token0
+        assertEq(balance0Before, currency0.balanceOfSelf());
+
+        // push the price to tick = -60
+        IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams({
+            zeroForOne: true,
+            amountSpecified: -1000e18,
+            sqrtPriceLimitX96: TickMath.getSqrtPriceAtTick(-60)
+        });
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
+        swapRouter.swap(simpleKey, swapParams, testSettings, ZERO_BYTES);
+
+        // validate m02: tick and sqrtPriceX96 disagree
+        (uint160 sqrtPriceX96, int24 tick,,) = manager.getSlot0(simplePoolId);
+        assertEq(tick, -61);
+        assertEq(sqrtPriceX96, TickMath.getSqrtPriceAtTick(-60));
+        assertEq(TickMath.getTickAtSqrtPrice(sqrtPriceX96), -60);
+
+        // push the price just slightly
+        swapParams.zeroForOne = false;
+        swapParams.amountSpecified = -1;
+        swapParams.sqrtPriceLimitX96 = MAX_PRICE_LIMIT;
+        swapRouter.swap(simpleKey, swapParams, testSettings, ZERO_BYTES);
+
+        // even with a 1 wei trade, the tick realigns
+        (sqrtPriceX96, tick,,) = manager.getSlot0(simplePoolId);
+        assertEq(tick, -60);
+        assertEq(TickMath.getTickAtSqrtPrice(sqrtPriceX96), -60);
+
+        // withdraw liquidity and receive token1 only
+        balance0Before = currency0.balanceOfSelf();
+        balance1Before = currency1.balanceOfSelf();
+        LIQ_PARAM_SALT.liquidityDelta = -1e18;
+        modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
+
+        // receive token1
+        assertGt(currency1.balanceOfSelf(), balance1Before);
+        // did not receive token0
+        assertEq(balance0Before, currency0.balanceOfSelf());
+    }
+
+    /// @dev verify that liquidity positions are not impacted by m02
+    /// i.e. slot0.tick = -61 and slot0.sqrtPriceX96 = sqrtPriceAtTick(-60)
+    /// when withdrawing liquidity on the range [-120, -60], it is not possible to withdraw 2 tokens
+    function test_modifyLiquidity_m02_tickUpper_2() public {
+        assertEq(simpleKey.tickSpacing, 60);
+        LIQ_PARAM_SALT.liquidityDelta = 10_000e18;
+
+        // Add to range [-120, 120]
+        modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
+
+        // Add to range [-120, -60]
+        uint256 balance0Before = currency0.balanceOfSelf();
+        uint256 balance1Before = currency1.balanceOfSelf();
+        LIQ_PARAM_SALT.tickLower = -120;
+        LIQ_PARAM_SALT.tickUpper = -60;
+        LIQ_PARAM_SALT.liquidityDelta = 1e18;
+        modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
+
+        // paid token1
+        assertGt(balance1Before, currency1.balanceOfSelf());
+        // did not pay token0
+        assertEq(balance0Before, currency0.balanceOfSelf());
+
+        // push the price to tick = -60
+        IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams({
+            zeroForOne: true,
+            amountSpecified: -200e18,
+            sqrtPriceLimitX96: TickMath.getSqrtPriceAtTick(-60)
+        });
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
+        swapRouter.swap(simpleKey, swapParams, testSettings, ZERO_BYTES);
+
+        // validate m02: tick and sqrtPriceX96 disagree
+        (uint160 sqrtPriceX96, int24 tick,,) = manager.getSlot0(simplePoolId);
+        assertEq(tick, -61);
+        assertEq(sqrtPriceX96, TickMath.getSqrtPriceAtTick(-60));
+        assertEq(TickMath.getTickAtSqrtPrice(sqrtPriceX96), -60);
+
+        // withdraw liquidity and receive token1 only
+        balance0Before = currency0.balanceOfSelf();
+        balance1Before = currency1.balanceOfSelf();
+        LIQ_PARAM_SALT.liquidityDelta = -1e18;
+        modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
+
+        // receive token1
+        assertGt(currency1.balanceOfSelf(), balance1Before);
+        // did not receive token0
+        assertEq(balance0Before, currency0.balanceOfSelf());
     }
 }
