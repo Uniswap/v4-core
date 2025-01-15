@@ -48,6 +48,8 @@ contract Deployers is Test {
         IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18, salt: 0});
     IPoolManager.SwapParams public SWAP_PARAMS =
         IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
+    PoolSwapTest.TestSettings public SWAP_SETTINGS =
+        PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
     // Global variables
     Currency internal currency0;
@@ -227,7 +229,7 @@ contract Deployers is Test {
                 amountSpecified: amountSpecified,
                 sqrtPriceLimitX96: zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
             }),
-            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false}),
+            SWAP_SETTINGS,
             hookData
         );
     }
@@ -272,7 +274,7 @@ contract Deployers is Test {
                 amountSpecified: amountSpecified,
                 sqrtPriceLimitX96: zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
             }),
-            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false}),
+            SWAP_SETTINGS,
             hookData
         );
     }
