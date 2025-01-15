@@ -1198,6 +1198,42 @@ contract PoolManagerTest is Test, Deployers {
         nestedActionRouter.unlock(abi.encode(_actions));
     }
 
+    /// @dev verify that m02 behavior only occurs for zeroForOne trades (moving tick towards negative infinity)
+    /// and only occurs when sqrtPriceLimit is equal to getSqrtPriceAtTick(<tick>)
+    function test_slot0_tick_sqrtPrice_m02(bool zeroForOne, int8 tickOffset) public {
+        PoolId poolId = key.toId();
+        (, int24 currentTick,,) = manager.getSlot0(poolId);
+        assertEq(key.tickSpacing, 60);
+        assertEq(currentTick, 0);
+        
+        // Add full range liquidity
+        LIQUIDITY_PARAMS.tickLower = TickMath.minUsableTick(key.tickSpacing);
+        LIQUIDITY_PARAMS.tickUpper = TickMath.maxUsableTick(key.tickSpacing);
+        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
+
+        int24 targetTick = zeroForOne ? -int24(180) : int24(180);
+        targetTick += int24(tickOffset); // fuzz target tick 180 +/- 128
+        IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams({
+            zeroForOne: zeroForOne,
+            amountSpecified: -100_000_000e18,
+            sqrtPriceLimitX96: TickMath.getSqrtPriceAtTick(targetTick)
+        });
+        swapRouter.swap(key, swapParams, SWAP_SETTINGS, ZERO_BYTES);
+
+        (uint160 sqrtPriceX96, int24 tick,,) = manager.getSlot0(poolId);
+        if (zeroForOne && (targetTick % key.tickSpacing == 0)) {
+            // for zeroForOne trades (moving tick towards negative infinity), if the slot0.sqrtPrice lands exactly
+            // on a tick, the slot0.tick should be decremented by one
+            assertEq(tick, targetTick - 1, "M02 behavior");
+            assertEq(sqrtPriceX96, TickMath.getSqrtPriceAtTick(targetTick));
+            assertEq(targetTick, TickMath.getTickAtSqrtPrice(sqrtPriceX96));
+        } else {
+            assertEq(tick, targetTick);
+            assertEq(sqrtPriceX96, TickMath.getSqrtPriceAtTick(targetTick));
+            assertEq(tick, TickMath.getTickAtSqrtPrice(sqrtPriceX96));
+        }
+    }
+
     // function testExtsloadForPoolPrice() public {
     //     IPoolManager.key = IPoolManager.PoolKey({
     //         currency0: currency0,
