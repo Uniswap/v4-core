@@ -20,7 +20,6 @@ import {TickMath} from "src/libraries/TickMath.sol";
 import {toBalanceDelta} from "src/types/BalanceDelta.sol";
 import {Logger} from "./utils/Logger.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
-import "forge-std/console2.sol";
 
 contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers {
     using StateLibrary for IPoolManager;

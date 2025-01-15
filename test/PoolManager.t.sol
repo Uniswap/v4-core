@@ -1205,7 +1205,7 @@ contract PoolManagerTest is Test, Deployers {
         (, int24 currentTick,,) = manager.getSlot0(poolId);
         assertEq(key.tickSpacing, 60);
         assertEq(currentTick, 0);
-        
+
         // Add full range liquidity
         LIQUIDITY_PARAMS.tickLower = TickMath.minUsableTick(key.tickSpacing);
         LIQUIDITY_PARAMS.tickUpper = TickMath.maxUsableTick(key.tickSpacing);
@@ -1227,7 +1227,7 @@ contract PoolManagerTest is Test, Deployers {
         // fuzz target tick 180 +/- 128
         int24 targetTick = zeroForOne ? -int24(180) : int24(180);
         targetTick += int24(tickOffset);
-        
+
         uint160 targetSqrtPrice = TickMath.getSqrtPriceAtTick(targetTick);
         IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams({
             zeroForOne: zeroForOne,
