@@ -47,7 +47,7 @@ jobs:
           git submodule update --init --recursive
 
       - name: Compile
-        run: forge install
+        run: forge build
 
       - name: Release
         env:
