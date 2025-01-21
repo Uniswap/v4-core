@@ -22,6 +22,7 @@ contract SkipCallsTest is Test, Deployers {
 
     function deploy(SkipCallsTestHook skipCallsTestHook) private {
         SkipCallsTestHook impl = new SkipCallsTestHook();
+        vm.allowCheatcodes(address(skipCallsTestHook));
         vm.etch(address(skipCallsTestHook), address(impl).code);
         deployFreshManagerAndRouters();
         skipCallsTestHook.setManager(IPoolManager(manager));

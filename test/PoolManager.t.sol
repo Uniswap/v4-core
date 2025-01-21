@@ -73,6 +73,8 @@ contract PoolManagerTest is Test, Deployers {
 
     uint24 constant MAX_PROTOCOL_FEE_BOTH_TOKENS = (1000 << 12) | 1000; // 1000 1000
 
+    address recipientAddress = makeAddr("recipientAddress");
+
     function setUp() public {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
 
@@ -1057,11 +1059,11 @@ contract PoolManagerTest is Test, Deployers {
 
         assertEq(manager.protocolFeesAccrued(currency0), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
-        assertEq(currency0.balanceOf(address(1)), 0);
+        assertEq(currency0.balanceOf(recipientAddress), 0);
         vm.prank(feeController);
-        manager.collectProtocolFees(address(1), currency0, expectedFees);
+        manager.collectProtocolFees(recipientAddress, currency0, expectedFees);
         vm.snapshotGasLastCall("erc20 collect protocol fees");
-        assertEq(currency0.balanceOf(address(1)), expectedFees);
+        assertEq(currency0.balanceOf(recipientAddress), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency0), 0);
     }
 
@@ -1086,10 +1088,10 @@ contract PoolManagerTest is Test, Deployers {
 
         assertEq(manager.protocolFeesAccrued(currency0), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
-        assertEq(currency0.balanceOf(address(1)), 0);
+        assertEq(currency0.balanceOf(recipientAddress), 0);
         vm.prank(feeController);
-        manager.collectProtocolFees(address(1), currency0, expectedFees);
-        assertEq(currency0.balanceOf(address(1)), expectedFees);
+        manager.collectProtocolFees(recipientAddress, currency0, expectedFees);
+        assertEq(currency0.balanceOf(recipientAddress), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency0), 0);
     }
 
@@ -1114,10 +1116,10 @@ contract PoolManagerTest is Test, Deployers {
 
         assertEq(manager.protocolFeesAccrued(currency0), 0);
         assertEq(manager.protocolFeesAccrued(currency1), expectedFees);
-        assertEq(currency1.balanceOf(address(1)), 0);
+        assertEq(currency1.balanceOf(recipientAddress), 0);
         vm.prank(feeController);
-        manager.collectProtocolFees(address(1), currency1, 0);
-        assertEq(currency1.balanceOf(address(1)), expectedFees);
+        manager.collectProtocolFees(recipientAddress, currency1, 0);
+        assertEq(currency1.balanceOf(recipientAddress), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
     }
 
@@ -1143,11 +1145,11 @@ contract PoolManagerTest is Test, Deployers {
 
         assertEq(manager.protocolFeesAccrued(nativeCurrency), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
-        assertEq(nativeCurrency.balanceOf(address(1)), 0);
+        assertEq(nativeCurrency.balanceOf(recipientAddress), 0);
         vm.prank(feeController);
-        manager.collectProtocolFees(address(1), nativeCurrency, expectedFees);
+        manager.collectProtocolFees(recipientAddress, nativeCurrency, expectedFees);
         vm.snapshotGasLastCall("native collect protocol fees");
-        assertEq(nativeCurrency.balanceOf(address(1)), expectedFees);
+        assertEq(nativeCurrency.balanceOf(recipientAddress), expectedFees);
         assertEq(manager.protocolFeesAccrued(nativeCurrency), 0);
     }
 
@@ -1173,10 +1175,10 @@ contract PoolManagerTest is Test, Deployers {
 
         assertEq(manager.protocolFeesAccrued(nativeCurrency), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
-        assertEq(nativeCurrency.balanceOf(address(1)), 0);
+        assertEq(nativeCurrency.balanceOf(recipientAddress), 0);
         vm.prank(feeController);
-        manager.collectProtocolFees(address(1), nativeCurrency, 0);
-        assertEq(nativeCurrency.balanceOf(address(1)), expectedFees);
+        manager.collectProtocolFees(recipientAddress, nativeCurrency, 0);
+        assertEq(nativeCurrency.balanceOf(recipientAddress), expectedFees);
         assertEq(manager.protocolFeesAccrued(nativeCurrency), 0);
     }
 
