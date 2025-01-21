@@ -11,7 +11,7 @@ import {CustomRevert} from "../../src/libraries/CustomRevert.sol";
 
 contract TestCurrency is Test {
     uint256 constant initialERC20Balance = 1000 ether;
-    address constant otherAddress = address(1);
+    address constant otherAddress = address(123456789);
 
     Currency nativeCurrency;
     Currency erc20Currency;
