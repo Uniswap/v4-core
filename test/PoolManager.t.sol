@@ -73,7 +73,7 @@ contract PoolManagerTest is Test, Deployers {
 
     uint24 constant MAX_PROTOCOL_FEE_BOTH_TOKENS = (1000 << 12) | 1000; // 1000 1000
 
-    address recipientAddress = address(123456789);
+    address recipientAddress = makeAddr("recipientAddress");
 
     function setUp() public {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
