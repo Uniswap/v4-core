@@ -7,6 +7,11 @@
     "url": "git+https://github.com/Uniswap/v4-core.git"
   },
   "license": "BUSL-1.1",
+  "keywords": [
+    "uniswap",
+    "core",
+    "v4"
+  ],
   "bugs": {
     "url": "https://uniswap.org/bug-bounty"
   },
