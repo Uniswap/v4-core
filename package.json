@@ -1,0 +1,18 @@
+{
+  "name": "@uniswap/v4-core",
+  "version": "1.0.0",
+  "description": "🦄 Core smart contracts of Uniswap v4",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Uniswap/v4-core.git"
+  },
+  "license": "BUSL-1.1",
+  "bugs": {
+    "url": "https://github.com/Uniswap/v4-core/issues"
+  },
+  "homepage": "https://github.com/Uniswap/v4-core#readme",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}
