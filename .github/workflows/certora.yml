@@ -1,0 +1,83 @@
+name: Certora Prover Workflow
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - run: ./certora/scripts/munge.sh
+
+      - name: Certora Compilation
+        uses: Certora/certora-run-action@main
+        with:
+          configurations: |-
+            certora/confs/PoolManager_hooks.conf
+            certora/confs/SqrtPriceMath.conf
+            certora/confs/Slot0Library.conf
+            certora/confs/PoolManager_SwapTest.conf
+            certora/confs/PoolManager_liquidityAccounting.conf
+            certora/confs/ProtocolFeeLibrary.conf
+            certora/confs/SwapMathTest.conf
+            certora/confs/PoolManager_swapAccounting.conf
+            certora/confs/StateLibrary.conf
+            certora/confs/PoolManager_swapCallback.conf
+            certora/confs/CurrencyDelta.conf
+            certora/confs/TickBitmapTest.conf
+            certora/confs/PoolManager.conf
+          solc-versions: 0.8.26
+          solc-remove-version-prefix: "0."
+          job-name: "Uniswap V4 Core"
+          certora-key: ${{ secrets.CERTORAKEY }}
+          compilation-steps-only: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  verify:
+    runs-on: ubuntu-latest
+    needs: compile
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - run: ./certora/scripts/munge.sh
+
+      - uses: Certora/certora-run-action@main
+        with:
+          configurations: |-
+            certora/confs/PoolManager_hooks.conf --exclude_rule modifyLiquidityHookSenderDeltasSumIsPreserved
+            certora/confs/ProtocolFeeLibrary.conf
+            certora/confs/SqrtPriceMath.conf
+            certora/confs/TickBitmapTest.conf --rule sanity
+            certora/confs/TickBitmapTest.conf --exclude_rule sanity
+            certora/confs/SwapMathTest.conf
+            certora/confs/CurrencyDelta.conf
+            certora/confs/StateLibrary.conf
+            certora/confs/PoolManager_liquidityAccounting.conf
+            certora/confs/PoolManager_1.conf
+            certora/confs/PoolManager_2.conf
+            certora/confs/PoolManager_3.conf
+            certora/confs/PoolManager_4.conf
+            certora/confs/PoolManager_swapAccounting.conf --rule swapIntegrity
+            certora/confs/PoolManager_swapAccounting_1.conf
+            certora/confs/PoolManager_swapAccounting_2.conf
+            certora/confs/PoolManager_swapAccounting_3.conf
+            certora/confs/PoolManager_swapAccounting_4.conf
+          solc-versions: 0.8.26
+          solc-remove-version-prefix: "0."
+          job-name: "Uniswap V4 Core"
+          certora-key: ${{ secrets.CERTORAKEY }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

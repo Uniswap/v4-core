@@ -6,3 +6,7 @@ typechain/
 foundry-out/
 .vscode/
 out/
+
+#certora formal verification
+.certora_internal/
+certora/munged/*
