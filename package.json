@@ -8,7 +8,7 @@
   },
   "license": "BUSL-1.1",
   "bugs": {
-    "url": "https://github.com/Uniswap/v4-core/issues"
+    "url": "https://uniswap.org/bug-bounty"
   },
   "homepage": "https://github.com/Uniswap/v4-core#readme",
   "publishConfig": {
