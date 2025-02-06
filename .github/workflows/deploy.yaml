@@ -35,6 +35,15 @@ jobs:
           node-version: "20.x"
           registry-url: "https://registry.npmjs.org"
           scope: "@uniswap"
+          
+      - name: Release
+        env:
+          NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npm set "//registry.npmjs.org/:_authToken" ${{ env.NPM_TOKEN }} 
+          npm login
+          npm publish --provenance --access public --dry-run
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
@@ -47,15 +56,3 @@ jobs:
 
       - name: Compile
         run: forge build
-
-      - name: Login
-        env:
-          NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm set "//registry.npmjs.org/:_authToken" ${{ env.NPM_TOKEN }} && npm login
-      
-      - name: Release
-        env:
-          NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm publish --provenance --access public
