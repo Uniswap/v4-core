@@ -52,4 +52,4 @@ jobs:
           NPM_CONFIG_USERCONFIG: /dev/null
           NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc && npm publish
+        run: npm publish
