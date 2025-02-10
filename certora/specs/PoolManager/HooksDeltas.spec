@@ -154,7 +154,7 @@ rule swapHookSenderDeltasSumIsPreserved() {
     //satisfy deltaHook0_B != deltaHook0_A;
 }
 
-/// TIME-OUT
+/// Hard rule: TIME-OUT
 rule modifyLiquidityHookSenderDeltasSumIsPreserved() {
     env e1;
     env e2;
@@ -187,6 +187,7 @@ rule modifyLiquidityHookSenderDeltasSumIsPreserved() {
     deltaSender0_B + deltaHook0_B == deltaSender0_A + deltaHook0_A
     &&
     deltaSender1_B + deltaHook1_B == deltaSender1_A + deltaHook1_A;
+    /// Soundness check: satisfiability of different hook deltas results.
     //satisfy deltaHook0_B != deltaHook0_A;
 }
 

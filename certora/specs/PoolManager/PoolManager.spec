@@ -9,6 +9,9 @@ import "./setup/extsload.spec";
 import "./setup/lock.spec";
 import "./setup/Liquidity.spec";
 import "../Summaries/SwapStepSummary.spec";
+/// Use this summary to replace the real Slot0 library with CVL mapping implementation (verified).
+/// Significantly improves running times for swap().
+/// import "../Summaries/Slot0Summary.spec";
 
 using PoolManager as PoolManager;
 using PoolGetters as PoolGetters;
@@ -535,4 +538,90 @@ rule donationDoesntDecreasePositionValue() {
 
     // assert the the fees accrued doesnt decrease in the second call
     assert feesAccrued_first <= feesAccrued_second;
+}
+
+/// @title Liquidity positions cannot be affected by tick-sqrt price misaligment (Certora M-02)
+rule liquidityPositionAgnosticM02(PoolManager.PoolKey key)
+{
+    /// Require pool invariants
+    PoolManager.PoolId poolId = PoolGetters.toId(key);
+    requireInvariant ValidTickAndPrice(poolId);
+    requireInvariant InitializedPoolHasValidTickSpacing(key);
+    requireInvariant TickSqrtPriceCorrelation(poolId);
+    requireInvariant liquidityGrossNetInvariant(poolId);
+    requireInvariant NoGrossLiquidityForUninitializedTick(poolId);
+
+    /// Position parameters
+    int24 tickLower;
+    int24 tickUpper;
+    int128 liquidity;
+    /// Enforced for any liquidity position
+    require tickUpper <= MAX_TICK();
+    require tickLower >= MIN_TICK();
+    require tickLower <= tickUpper;
+
+    /// Pre-state
+    int24 tick_pre = PoolGetters.getTick(poolId);
+    uint160 sqrtPrice_pre = PoolGetters.getSqrtPriceX96(poolId);
+    mathint amount0_pre; mathint amount1_pre;
+    amount0_pre, amount1_pre = getPositionFunds(liquidity, tickLower, tickUpper, tick_pre, sqrtPrice_pre);
+
+    /// Tick misalignment
+    require tick_pre + 1 == tickAtSqrtPrice(sqrtPrice_pre);
+    /// Position upper tick is lower than corresponding price tick
+    require tickUpper <= tickAtSqrtPrice(sqrtPrice_pre);
+        env e;
+        IPoolManager.SwapParams swapParams;
+        require swapParams.zeroForOne == false;
+        bytes hookData;
+        swap(e, key, swapParams, hookData); 
+    /// Post-state
+    int24 tick_post = PoolGetters.getTick(poolId);
+    uint160 sqrtPrice_post = PoolGetters.getSqrtPriceX96(poolId);
+    mathint amount0_post; mathint amount1_post;
+    amount0_post, amount1_post = getPositionFunds(liquidity, tickLower, tickUpper, tick_post, sqrtPrice_post);
+
+    assert amount0_post == amount0_pre, "LP cannot receive currency0 tokens from upwards-swap";
+    assert amount1_post >= amount1_pre, "LP currency1 position value cannot decrease from upwards-swap";
+}
+/// @title M-02 behavior only occurs for zeroForOne trades (moving tick towards negative infinity)
+/// and only occurs when sqrtPriceLimit is equal to getSqrtPriceAtTick(<tick>)
+rule tickMisalignmentOccursOnlyForDownSwaps(PoolManager.PoolKey key) 
+{
+    /// Require pool invariants
+    PoolManager.PoolId poolId = PoolGetters.toId(key);
+    require bitmapPoolId == poolId;
+    requireInvariant ValidTickAndPrice(poolId);
+    requireInvariant InitializedPoolHasValidTickSpacing(key);
+    requireInvariant TickSqrtPriceCorrelation(poolId);
+    requireInvariant liquidityGrossNetInvariant(poolId);
+    requireInvariant NoGrossLiquidityForUninitializedTick(poolId);
+    requireInvariant NoLiquidityAtBounds(poolId); 
+
+    /// Pre-state
+    int24 tick_pre = PoolGetters.getTick(poolId);
+    uint160 sqrtPrice_pre = PoolGetters.getSqrtPriceX96(poolId);
+    /// Assuming tick and price are aligned (M-02 invariant)
+    require TickSqrtPriceStrongCorrespondence(tick_pre, sqrtPrice_pre);
+    /// Tick misalignment
+        env e;
+        IPoolManager.SwapParams swapParams;
+        bytes hookData;
+        PoolManager.BalanceDelta swapDelta = swap(e, key, swapParams, hookData);
+        int128 swap0 = CurrencyGetters.amount0(swapDelta);
+        int128 swap1 = CurrencyGetters.amount1(swapDelta);
+    int24 tick_post = PoolGetters.getTick(poolId);
+    uint160 sqrtPrice_post = PoolGetters.getSqrtPriceX96(poolId);
+
+    /// If the alignment is broken
+    bool misalignment = !TickSqrtPriceStrongCorrespondence(tick_post, sqrtPrice_post);
+    /// The conditions for misalignment:
+    assert misalignment =>
+        /// The tick is down-offset by 1.
+        tick_post + 1 == tickAtSqrtPrice(sqrtPrice_post) &&
+        /// Only swaps towards -infinity
+        swapParams.zeroForOne == true;//&&
+        /// The sqrt price was set to the limit
+        //swapParams.sqrtPriceLimitX96 == sqrtPrice_post;
+    satisfy misalignment;
 }

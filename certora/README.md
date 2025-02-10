@@ -123,8 +123,6 @@ Wrapper contract for `StateLibrary` library.
 - setup
    -**HooksNONDET.spec**: Non-deterministic view (NONDET) summaries for all external hook calls.
 
-/// Re-organize specs
-
 - **Accounting_modifyLiquidity.spec**: Position accounting rules for modifyLiquidity() function.
 - **Accounting_swap.spec**: Position accounting rules for swap() function.
 - **CurrencyDeltaSummary.spec**: A summarization for transient storage currency deltas

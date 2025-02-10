@@ -104,8 +104,6 @@ rule integrityOfCrossingTicks(int24 tick) {
     }
 }
 
-
-
 /// Sometimes the quantified axiom grounding doesn't take effect for all combinations.
 /// In this case we specifically choose the arguments and apply the axiom, based on rule assertion.
 function applySqrtPriceAdditivityAxiomRoundDown(uint128 liquidity, uint160 sqrtP, uint160 sqrtQ, uint160 sqrtR) 
