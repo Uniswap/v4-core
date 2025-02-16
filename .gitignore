@@ -1,3 +1,4 @@
+# if you add a file here, add it to `.npmignore` too
 artifacts/
 cache/
 crytic-export/
