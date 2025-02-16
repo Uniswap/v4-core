@@ -87,7 +87,7 @@ A list of contracts in the verification scope
 
 The main contract of UniswapV4 core.
 
-sh certora/scripts/PoolManager_X.sh  - generic rules about PoolManager
+sh certora/scripts/PoolManager_X.sh - generic rules about PoolManager
 
 #### TickBitmapTest
 
@@ -114,14 +114,14 @@ Wrapper contract for `StateLibrary` library.
 ## List of specs
 
 ### Common
+
 - **CVLMath.spec**: Basic mathematical library with summarizations for `mulDiv` operations.
 - **Foundry.spec**: Basic spec file for foundry integration with the Prover.
 - **TickMathDefinitions.spec**: Definitions of `TickMath` in CVL.
 
-
 ### PoolManager
-- setup
-   -**HooksNONDET.spec**: Non-deterministic view (NONDET) summaries for all external hook calls.
+
+- setup -**HooksNONDET.spec**: Non-deterministic view (NONDET) summaries for all external hook calls.
 
 - **Accounting_modifyLiquidity.spec**: Position accounting rules for modifyLiquidity() function.
 - **Accounting_swap.spec**: Position accounting rules for swap() function.
