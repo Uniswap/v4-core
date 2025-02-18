@@ -2,24 +2,24 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {IHooks} from "../src/interfaces/IHooks.sol";
-import {Hooks} from "../src/libraries/Hooks.sol";
-import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
-import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
-import {PoolManager} from "../src/PoolManager.sol";
-import {TickMath} from "../src/libraries/TickMath.sol";
-import {Pool} from "../src/libraries/Pool.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {Constants} from "./utils/Constants.sol";
+import {PoolId} from "../src/types/PoolId.sol";
+import {PoolKey} from "../src/types/PoolKey.sol";
 import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
+import {IHooks} from "../src/interfaces/IHooks.sol";
+import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
+import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
+import {Pool} from "../src/libraries/Pool.sol";
+import {Hooks} from "../src/libraries/Hooks.sol";
+import {TickMath} from "../src/libraries/TickMath.sol";
+import {LPFeeLibrary} from "../src/libraries/LPFeeLibrary.sol";
+import {StateLibrary} from "../src/libraries/StateLibrary.sol";
+import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
+import {PoolManager} from "../src/PoolManager.sol";
 import {MockHooks} from "../src/test/MockHooks.sol";
 import {MockContract} from "../src/test/MockContract.sol";
 import {EmptyTestHooks} from "../src/test/EmptyTestHooks.sol";
-import {PoolKey} from "../src/types/PoolKey.sol";
-import {PoolId} from "../src/types/PoolId.sol";
-import {LPFeeLibrary} from "../src/libraries/LPFeeLibrary.sol";
-import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
-import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 
 contract PoolManagerInitializeTest is Test, Deployers {
     using Hooks for IHooks;
