@@ -18,12 +18,23 @@ library AmountHelpers {
     ) public view returns (uint256 amount0, uint256 amount1) {
         PoolId id = key.toId();
         uint128 liquidity = StateLibrary.getLiquidity(manager, id);
-        (uint160 sqrtPriceX96,,,) = StateLibrary.getSlot0(manager, id);
+        (uint160 sqrtPriceX96, , , ) = StateLibrary.getSlot0(manager, id);
 
         uint160 sqrtPriceX96Lower = TickMath.getSqrtPriceAtTick(params.tickLower);
         uint160 sqrtPriceX96Upper = TickMath.getSqrtPriceAtTick(params.tickUpper);
 
-        amount0 = LiquidityAmounts.getAmount0ForLiquidity(sqrtPriceX96Lower, sqrtPriceX96, liquidity);
-        amount1 = LiquidityAmounts.getAmount1ForLiquidity(sqrtPriceX96Upper, sqrtPriceX96, liquidity);
+        require(sqrtPriceX96 >= sqrtPriceX96Lower && sqrtPriceX96 <= sqrtPriceX96Upper, "Price out of range");
+
+        if (sqrtPriceX96 < sqrtPriceX96Lower) {
+            amount0 = LiquidityAmounts.getAmount0ForLiquidity(sqrtPriceX96, sqrtPriceX96Lower, liquidity);
+        } else {
+            amount0 = LiquidityAmounts.getAmount0ForLiquidity(sqrtPriceX96Lower, sqrtPriceX96, liquidity);
+        }
+
+        if (sqrtPriceX96 > sqrtPriceX96Upper) {
+            amount1 = LiquidityAmounts.getAmount1ForLiquidity(sqrtPriceX96Upper, sqrtPriceX96, liquidity);
+        } else {
+            amount1 = LiquidityAmounts.getAmount1ForLiquidity(sqrtPriceX96, sqrtPriceX96Upper, liquidity);
+        }
     }
 }
