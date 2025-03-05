@@ -23,7 +23,7 @@ library AmountHelpers {
         uint160 sqrtPriceX96Lower = TickMath.getSqrtPriceAtTick(params.tickLower);
         uint160 sqrtPriceX96Upper = TickMath.getSqrtPriceAtTick(params.tickUpper);
 
-        require(sqrtPriceX96 >= sqrtPriceX96Lower && sqrtPriceX96 <= sqrtPriceX96Upper, "Price out of range");
+        require(sqrtPriceX96Lower <= sqrtPriceX96 && sqrtPriceX96 <= sqrtPriceX96Upper, "Price out of range");
 
         if (sqrtPriceX96 < sqrtPriceX96Lower) {
             amount0 = LiquidityAmounts.getAmount0ForLiquidity(sqrtPriceX96, sqrtPriceX96Lower, liquidity);
