@@ -15,7 +15,7 @@ library AmountHelpers {
         IPoolManager manager,
         IPoolManager.ModifyLiquidityParams memory params,
         PoolKey memory key
-    ) public view returns (uint256 amount0, uint256 amount1) {
+    ) external view returns (uint256 amount0, uint256 amount1) {
         PoolId id = key.toId();
         uint128 liquidity = StateLibrary.getLiquidity(manager, id);
         (uint160 sqrtPriceX96, , , ) = StateLibrary.getSlot0(manager, id);
