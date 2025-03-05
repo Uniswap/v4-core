@@ -25,16 +25,7 @@ library AmountHelpers {
 
         require(sqrtPriceX96Lower <= sqrtPriceX96 && sqrtPriceX96 <= sqrtPriceX96Upper, "Price out of range");
 
-        if (sqrtPriceX96 < sqrtPriceX96Lower) {
-            amount0 = LiquidityAmounts.getAmount0ForLiquidity(sqrtPriceX96, sqrtPriceX96Lower, liquidity);
-        } else {
-            amount0 = LiquidityAmounts.getAmount0ForLiquidity(sqrtPriceX96Lower, sqrtPriceX96, liquidity);
-        }
-
-        if (sqrtPriceX96 > sqrtPriceX96Upper) {
-            amount1 = LiquidityAmounts.getAmount1ForLiquidity(sqrtPriceX96Upper, sqrtPriceX96, liquidity);
-        } else {
-            amount1 = LiquidityAmounts.getAmount1ForLiquidity(sqrtPriceX96, sqrtPriceX96Upper, liquidity);
-        }
+        amount0 = LiquidityAmounts.getAmount0ForLiquidity(sqrtPriceX96Lower, sqrtPriceX96, liquidity);
+        amount1 = LiquidityAmounts.getAmount1ForLiquidity(sqrtPriceX96, sqrtPriceX96Upper, liquidity);
     }
 }
