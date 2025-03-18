@@ -11,13 +11,14 @@ import {CustomRevert} from "../../src/libraries/CustomRevert.sol";
 
 contract TestCurrency is Test {
     uint256 constant initialERC20Balance = 1000 ether;
-    address constant otherAddress = address(1);
+    address otherAddress;
 
     Currency nativeCurrency;
     Currency erc20Currency;
     CurrencyTest currencyTest;
 
     function setUp() public {
+        otherAddress = makeAddr("otherAddress");
         currencyTest = new CurrencyTest();
         vm.deal(address(currencyTest), 30 ether);
         nativeCurrency = Currency.wrap(address(0));

@@ -47,7 +47,7 @@ contract TestDelegateCall is Test, Deployers {
         assertTrue(success);
     }
 
-    function test_externalCallToPrivateMethodWithModifer_succeeds() public view {
+    function test_externalCallToPrivateMethodWithModifier_succeeds() public view {
         noDelegateCallTest.callsIntoNoDelegateCallFunction();
     }
 
