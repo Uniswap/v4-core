@@ -4,11 +4,11 @@ pragma solidity ^0.8.20;
 import {Test} from "forge-std/Test.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
-import {PoolManager} from "../src/PoolManager.sol";
 import {NoDelegateCall} from "../src/NoDelegateCall.sol";
+import {PoolManager} from "../src/PoolManager.sol";
+import {NoDelegateCallTest} from "../src/test/NoDelegateCallTest.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {ProxyPoolManager} from "../src/test/ProxyPoolManager.sol";
-import {NoDelegateCallTest} from "../src/test/NoDelegateCallTest.sol";
 
 contract TestDelegateCall is Test, Deployers {
     // override to use ProxyPoolManager
