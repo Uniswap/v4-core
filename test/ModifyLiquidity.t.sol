@@ -16,20 +16,20 @@ import {Currency} from "src/types/Currency.sol";
 =======
 >>>>>>> 4d3ef8c3 (refactor: reorder and deduplicate test imports)
 import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
-import {Logger} from "./utils/Logger.sol";
-import {Deployers} from "./utils/Deployers.sol";
 import {Constants} from "./utils/Constants.sol";
+import {Deployers} from "./utils/Deployers.sol";
 import {JavascriptFfi} from "./utils/JavascriptFfi.sol";
+import {Logger} from "./utils/Logger.sol";
+import {BalanceDelta} from "../src/types/BalanceDelta.sol";
+import {Currency} from "src/types/Currency.sol";
 import {PoolId} from "src/types/PoolId.sol";
 import {PoolKey} from "src/types/PoolKey.sol";
-import {Currency} from "src/types/Currency.sol";
 import {toBalanceDelta} from "src/types/BalanceDelta.sol";
-import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {IHooks} from "src/interfaces/IHooks.sol";
 import {IPoolManager} from "src/interfaces/IPoolManager.sol";
 import {Position} from "src/libraries/Position.sol";
-import {TickMath} from "src/libraries/TickMath.sol";
 import {StateLibrary} from "src/libraries/StateLibrary.sol";
+import {TickMath} from "src/libraries/TickMath.sol";
 import {Fuzzers} from "../src/test/Fuzzers.sol";
 import {PoolModifyLiquidityTest} from "../src/test/PoolModifyLiquidityTest.sol";
 

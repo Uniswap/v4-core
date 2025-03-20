@@ -3,18 +3,16 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {Deployers} from "./utils/Deployers.sol";
-import {PoolId} from "../src/types/PoolId.sol";
-import {Currency} from "../src/types/Currency.sol";
 import {BalanceDelta} from "../src/types/BalanceDelta.sol";
+import {Currency} from "../src/types/Currency.sol";
+import {PoolId} from "../src/types/PoolId.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
-import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
-import {FeeTakingHook} from "../src/test/FeeTakingHook.sol";
-import {LPFeeTakingHook} from "../src/test/LPFeeTakingHook.sol";
 import {CustomCurveHook} from "../src/test/CustomCurveHook.sol";
 import {DeltaReturningHook} from "../src/test/DeltaReturningHook.sol";
+<<<<<<< HEAD
 <<<<<<< HEAD
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
@@ -27,6 +25,11 @@ import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 =======
 >>>>>>> 4d3ef8c3 (refactor: reorder and deduplicate test imports)
+=======
+import {FeeTakingHook} from "../src/test/FeeTakingHook.sol";
+import {LPFeeTakingHook} from "../src/test/LPFeeTakingHook.sol";
+import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
+>>>>>>> 08660e5f (refactor: reorder imports alphabetically)
 
 contract CustomAccountingTest is Test, Deployers {
     using SafeCast for *;

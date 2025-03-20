@@ -2,29 +2,30 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {Deployers} from "./utils/Deployers.sol";
-import {Constants} from "./utils/Constants.sol";
 import {AmountHelpers} from "./utils/AmountHelpers.sol";
+import {Constants} from "./utils/Constants.sol";
+import {Deployers} from "./utils/Deployers.sol";
+import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
+import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
 import {PoolId} from "../src/types/PoolId.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
-import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
-import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
-import {Pool} from "../src/libraries/Pool.sol";
-import {Hooks} from "../src/libraries/Hooks.sol";
-import {TickMath} from "../src/libraries/TickMath.sol";
-import {Position} from "../src/libraries/Position.sol";
-import {SafeCast} from "../src/libraries/SafeCast.sol";
-import {LPFeeLibrary} from "../src/libraries/LPFeeLibrary.sol";
-import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 import {CustomRevert} from "../src/libraries/CustomRevert.sol";
+import {Hooks} from "../src/libraries/Hooks.sol";
+import {LPFeeLibrary} from "../src/libraries/LPFeeLibrary.sol";
+import {Pool} from "../src/libraries/Pool.sol";
+import {Position} from "../src/libraries/Position.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
+import {SafeCast} from "../src/libraries/SafeCast.sol";
+import {StateLibrary} from "../src/libraries/StateLibrary.sol";
+import {TickMath} from "../src/libraries/TickMath.sol";
 import {TransientStateLibrary} from "../src/libraries/TransientStateLibrary.sol";
 import {PoolManager} from "../src/PoolManager.sol";
 import {Action} from "../src/test/PoolNestedActionsTest.sol";
 import {Actions} from "../src/test/ActionsRouter.sol";
+<<<<<<< HEAD
 import {MockHooks} from "../src/test/MockHooks.sol";
 import {MockContract} from "../src/test/MockContract.sol";
 <<<<<<< HEAD
@@ -36,10 +37,15 @@ import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 =======
 >>>>>>> 4d3ef8c3 (refactor: reorder and deduplicate test imports)
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
+=======
+>>>>>>> 08660e5f (refactor: reorder imports alphabetically)
 import {EmptyTestHooks} from "../src/test/EmptyTestHooks.sol";
-import {TestInvalidERC20} from "../src/test/TestInvalidERC20.sol";
+import {MockContract} from "../src/test/MockContract.sol";
+import {MockHooks} from "../src/test/MockHooks.sol";
 import {PoolEmptyUnlockTest} from "../src/test/PoolEmptyUnlockTest.sol";
 import {PoolModifyLiquidityTest} from "../src/test/PoolModifyLiquidityTest.sol";
+import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
+import {TestInvalidERC20} from "../src/test/TestInvalidERC20.sol";
 
 contract PoolManagerTest is Test, Deployers {
     using Hooks for IHooks;
