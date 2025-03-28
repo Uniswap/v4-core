@@ -370,7 +370,9 @@ contract ERC6909ClaimsTest is Test {
         token.transferFrom(sender, receiver, id, amount);
     }
 
-    function test_revertTransferFromBalanceOverflow(address sender, address receiver, uint256 id, uint256 amount) public {
+    function test_revertTransferFromBalanceOverflow(address sender, address receiver, uint256 id, uint256 amount)
+        public
+    {
         amount = bound(amount, 1, type(uint256).max);
         uint256 overflowAmount = type(uint256).max - amount + 1;
 
@@ -386,7 +388,9 @@ contract ERC6909ClaimsTest is Test {
         token.transferFrom(sender, receiver, id, overflowAmount);
     }
 
-    function test_revertTransferFromNotAuthorized(address sender, address receiver, uint256 id, uint256 amount) public {
+    function test_revertTransferFromNotAuthorized(address sender, address receiver, uint256 id, uint256 amount)
+        public
+    {
         amount = bound(amount, 1, type(uint256).max);
 
         token.mint(sender, id, amount);
