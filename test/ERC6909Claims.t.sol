@@ -345,6 +345,7 @@ contract ERC6909ClaimsTest is Test {
     }
 
     function test_revertTransferBalanceOverflow(address sender, address receiver, uint256 id, uint256 amount) public {
+        vm.assume(sender != receiver);
         amount = bound(amount, 1, type(uint256).max);
         uint256 overflowAmount = type(uint256).max - amount + 1;
 
@@ -373,6 +374,7 @@ contract ERC6909ClaimsTest is Test {
     function test_revertTransferFromBalanceOverflow(address sender, address receiver, uint256 id, uint256 amount)
         public
     {
+        vm.assume(sender != receiver);
         amount = bound(amount, 1, type(uint256).max);
         uint256 overflowAmount = type(uint256).max - amount + 1;
 
