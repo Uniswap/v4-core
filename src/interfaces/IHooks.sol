@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
-import {IPoolManager} from "./IPoolManager.sol";
+import {PoolOperation} from "../types/PoolOperation.sol";
 import {BeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 
 /// @notice V4 decides whether to invoke specific hooks by inspecting the least significant bits
@@ -39,7 +39,7 @@ interface IHooks {
     function beforeAddLiquidity(
         address sender,
         PoolKey calldata key,
-        IPoolManager.ModifyLiquidityParams calldata params,
+        PoolOperation.ModifyLiquidityParams calldata params,
         bytes calldata hookData
     ) external returns (bytes4);
 
@@ -55,7 +55,7 @@ interface IHooks {
     function afterAddLiquidity(
         address sender,
         PoolKey calldata key,
-        IPoolManager.ModifyLiquidityParams calldata params,
+        PoolOperation.ModifyLiquidityParams calldata params,
         BalanceDelta delta,
         BalanceDelta feesAccrued,
         bytes calldata hookData
@@ -70,7 +70,7 @@ interface IHooks {
     function beforeRemoveLiquidity(
         address sender,
         PoolKey calldata key,
-        IPoolManager.ModifyLiquidityParams calldata params,
+        PoolOperation.ModifyLiquidityParams calldata params,
         bytes calldata hookData
     ) external returns (bytes4);
 
@@ -86,7 +86,7 @@ interface IHooks {
     function afterRemoveLiquidity(
         address sender,
         PoolKey calldata key,
-        IPoolManager.ModifyLiquidityParams calldata params,
+        PoolOperation.ModifyLiquidityParams calldata params,
         BalanceDelta delta,
         BalanceDelta feesAccrued,
         bytes calldata hookData
@@ -103,7 +103,7 @@ interface IHooks {
     function beforeSwap(
         address sender,
         PoolKey calldata key,
-        IPoolManager.SwapParams calldata params,
+        PoolOperation.SwapParams calldata params,
         bytes calldata hookData
     ) external returns (bytes4, BeforeSwapDelta, uint24);
 
@@ -118,7 +118,7 @@ interface IHooks {
     function afterSwap(
         address sender,
         PoolKey calldata key,
-        IPoolManager.SwapParams calldata params,
+        PoolOperation.SwapParams calldata params,
         BalanceDelta delta,
         bytes calldata hookData
     ) external returns (bytes4, int128);
