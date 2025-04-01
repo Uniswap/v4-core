@@ -11,6 +11,7 @@ import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {BalanceDelta, BalanceDeltaLibrary, toBalanceDelta} from "../src/types/BalanceDelta.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
+import {PoolOperation} from "../src/types/PoolOperation.sol";
 import {SqrtPriceMath} from "../src/libraries/SqrtPriceMath.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
@@ -53,7 +54,7 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
         int256 liquidityDeltaUnbound,
         bool tight
     ) internal {
-        IPoolManager.ModifyLiquidityParams memory v4LiquidityParams = IPoolManager.ModifyLiquidityParams({
+        PoolOperation.ModifyLiquidityParams memory v4LiquidityParams = PoolOperation.ModifyLiquidityParams({
             tickLower: lowerTickUnsanitized,
             tickUpper: upperTickUnsanitized,
             liquidityDelta: liquidityDeltaUnbound,
@@ -99,7 +100,7 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
             overflows = true;
         }
         // v4 swap
-        IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams({
+        PoolOperation.SwapParams memory swapParams = PoolOperation.SwapParams({
             zeroForOne: zeroForOne,
             amountSpecified: amountSpecified,
             sqrtPriceLimitX96: zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT

@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {BaseTestHooks} from "./BaseTestHooks.sol";
 import {PoolKey} from "../types/PoolKey.sol";
+import {PoolOperation} from "../types/PoolOperation.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "../types/BeforeSwapDelta.sol";
@@ -22,7 +23,7 @@ contract DynamicReturnFeeTestHook is BaseTestHooks {
         fee = _fee;
     }
 
-    function beforeSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, bytes calldata)
+    function beforeSwap(address, PoolKey calldata, PoolOperation.SwapParams calldata, bytes calldata)
         external
         view
         override

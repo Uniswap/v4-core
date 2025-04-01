@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {LiquidityAmounts} from "./LiquidityAmounts.sol";
 import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
+import {PoolOperation} from "../../src/types/PoolOperation.sol";
 import {PoolId} from "../../src/types/PoolId.sol";
 import {TickMath} from "../../src/libraries/TickMath.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
@@ -13,7 +14,7 @@ import {StateLibrary} from "../../src/libraries/StateLibrary.sol";
 library AmountHelpers {
     function getMaxAmountInForPool(
         IPoolManager manager,
-        IPoolManager.ModifyLiquidityParams memory params,
+        PoolOperation.ModifyLiquidityParams memory params,
         PoolKey memory key
     ) public view returns (uint256 amount0, uint256 amount1) {
         PoolId id = key.toId();

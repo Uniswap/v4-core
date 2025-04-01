@@ -15,6 +15,7 @@ import {MockHooks} from "../src/test/MockHooks.sol";
 import {MockContract} from "../src/test/MockContract.sol";
 import {EmptyTestHooks} from "../src/test/EmptyTestHooks.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
+import {PoolOperation} from "../src/types/PoolOperation.sol";
 import {PoolModifyLiquidityTest} from "../src/test/PoolModifyLiquidityTest.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
@@ -399,23 +400,23 @@ contract PoolManagerTest is Test, Deployers {
     }
 
     function test_addLiquidity_gas() public {
-        IPoolManager.ModifyLiquidityParams memory uniqueParams =
-            IPoolManager.ModifyLiquidityParams({tickLower: -300, tickUpper: -180, liquidityDelta: 1e18, salt: 0});
+        PoolOperation.ModifyLiquidityParams memory uniqueParams =
+            PoolOperation.ModifyLiquidityParams({tickLower: -300, tickUpper: -180, liquidityDelta: 1e18, salt: 0});
         modifyLiquidityNoChecks.modifyLiquidity(key, uniqueParams, ZERO_BYTES);
         vm.snapshotGasLastCall("simple addLiquidity");
     }
 
     function test_addLiquidity_secondAdditionSameRange_gas() public {
-        IPoolManager.ModifyLiquidityParams memory uniqueParams =
-            IPoolManager.ModifyLiquidityParams({tickLower: -300, tickUpper: -180, liquidityDelta: 1e18, salt: 0});
+        PoolOperation.ModifyLiquidityParams memory uniqueParams =
+            PoolOperation.ModifyLiquidityParams({tickLower: -300, tickUpper: -180, liquidityDelta: 1e18, salt: 0});
         modifyLiquidityNoChecks.modifyLiquidity(key, uniqueParams, ZERO_BYTES);
         modifyLiquidityNoChecks.modifyLiquidity(key, uniqueParams, ZERO_BYTES);
         vm.snapshotGasLastCall("simple addLiquidity second addition same range");
     }
 
     function test_removeLiquidity_gas() public {
-        IPoolManager.ModifyLiquidityParams memory uniqueParams =
-            IPoolManager.ModifyLiquidityParams({tickLower: -300, tickUpper: -180, liquidityDelta: 1e18, salt: 0});
+        PoolOperation.ModifyLiquidityParams memory uniqueParams =
+            PoolOperation.ModifyLiquidityParams({tickLower: -300, tickUpper: -180, liquidityDelta: 1e18, salt: 0});
         // add some liquidity to remove
         modifyLiquidityNoChecks.modifyLiquidity(key, uniqueParams, ZERO_BYTES);
 
@@ -426,8 +427,8 @@ contract PoolManagerTest is Test, Deployers {
 
     function test_removeLiquidity_someLiquidityRemains_gas() public {
         // add double the liquidity to remove
-        IPoolManager.ModifyLiquidityParams memory uniqueParams =
-            IPoolManager.ModifyLiquidityParams({tickLower: -300, tickUpper: -180, liquidityDelta: 1e18, salt: 0});
+        PoolOperation.ModifyLiquidityParams memory uniqueParams =
+            PoolOperation.ModifyLiquidityParams({tickLower: -300, tickUpper: -180, liquidityDelta: 1e18, salt: 0});
         modifyLiquidityNoChecks.modifyLiquidity(key, uniqueParams, ZERO_BYTES);
 
         uniqueParams.liquidityDelta /= -2;
@@ -482,8 +483,8 @@ contract PoolManagerTest is Test, Deployers {
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
         key.fee = 100;
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: sqrtPriceX96});
+        PoolOperation.SwapParams memory params =
+            PoolOperation.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: sqrtPriceX96});
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
@@ -566,8 +567,8 @@ contract PoolManagerTest is Test, Deployers {
 
         (key,) = initPoolAndAddLiquidity(currency0, currency1, mockHooks, 100, SQRT_PRICE_1_1);
 
-        IPoolManager.SwapParams memory swapParams =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 10, sqrtPriceLimitX96: SQRT_PRICE_1_2});
+        PoolOperation.SwapParams memory swapParams =
+            PoolOperation.SwapParams({zeroForOne: true, amountSpecified: 10, sqrtPriceLimitX96: SQRT_PRICE_1_2});
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false});
@@ -594,8 +595,8 @@ contract PoolManagerTest is Test, Deployers {
 
         (key,) = initPoolAndAddLiquidity(currency0, currency1, mockHooks, 100, SQRT_PRICE_1_1);
 
-        IPoolManager.SwapParams memory swapParams =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -10, sqrtPriceLimitX96: SQRT_PRICE_1_2});
+        PoolOperation.SwapParams memory swapParams =
+            PoolOperation.SwapParams({zeroForOne: true, amountSpecified: -10, sqrtPriceLimitX96: SQRT_PRICE_1_2});
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false});
@@ -647,8 +648,8 @@ contract PoolManagerTest is Test, Deployers {
 
         swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
 
-        IPoolManager.SwapParams memory swapParams =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_4});
+        PoolOperation.SwapParams memory swapParams =
+            PoolOperation.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_4});
         testSettings = PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
@@ -669,8 +670,8 @@ contract PoolManagerTest is Test, Deployers {
     }
 
     function test_swap_mint6909IfNativeOutputNotTaken_gas() public {
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: false, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_2_1});
+        PoolOperation.SwapParams memory params =
+            PoolOperation.SwapParams({zeroForOne: false, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_2_1});
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false});
@@ -701,8 +702,8 @@ contract PoolManagerTest is Test, Deployers {
         manager.setOperator(address(swapRouter), true);
 
         // swap from currency1 to currency0 again, using 6909s as input tokens
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: false, amountSpecified: 25, sqrtPriceLimitX96: SQRT_PRICE_4_1});
+        PoolOperation.SwapParams memory params =
+            PoolOperation.SwapParams({zeroForOne: false, amountSpecified: 25, sqrtPriceLimitX96: SQRT_PRICE_4_1});
         testSettings = PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: true});
 
         vm.expectEmit();
@@ -715,8 +716,8 @@ contract PoolManagerTest is Test, Deployers {
     }
 
     function test_swap_burnNative6909AsInput_gas() public {
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: false, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_2_1});
+        PoolOperation.SwapParams memory params =
+            PoolOperation.SwapParams({zeroForOne: false, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_2_1});
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false});
@@ -734,7 +735,7 @@ contract PoolManagerTest is Test, Deployers {
         manager.setOperator(address(swapRouter), true);
 
         // swap from currency0 to currency1, using 6909s as input tokens
-        params = IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 25, sqrtPriceLimitX96: SQRT_PRICE_1_4});
+        params = PoolOperation.SwapParams({zeroForOne: true, amountSpecified: 25, sqrtPriceLimitX96: SQRT_PRICE_1_4});
         testSettings = PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: true});
 
         vm.expectEmit();
@@ -755,8 +756,8 @@ contract PoolManagerTest is Test, Deployers {
 
         swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
 
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_4});
+        PoolOperation.SwapParams memory params =
+            PoolOperation.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_4});
 
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         vm.snapshotGasLastCall("swap against liquidity");
@@ -768,8 +769,8 @@ contract PoolManagerTest is Test, Deployers {
 
         swapRouter.swap{value: 1 ether}(nativeKey, SWAP_PARAMS, testSettings, ZERO_BYTES);
 
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_4});
+        PoolOperation.SwapParams memory params =
+            PoolOperation.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_4});
 
         swapRouter.swap{value: 1 ether}(nativeKey, params, testSettings, ZERO_BYTES);
         vm.snapshotGasLastCall("swap against liquidity with native token");
@@ -792,7 +793,7 @@ contract PoolManagerTest is Test, Deployers {
         assertEq(slot0ProtocolFee, protocolFee);
 
         // Add liquidity - Fees dont accrue for positive liquidity delta.
-        IPoolManager.ModifyLiquidityParams memory params = LIQUIDITY_PARAMS;
+        PoolOperation.ModifyLiquidityParams memory params = LIQUIDITY_PARAMS;
         modifyLiquidityRouter.modifyLiquidity(key, params, ZERO_BYTES);
 
         assertEq(manager.protocolFeesAccrued(currency0), 0);
@@ -809,8 +810,8 @@ contract PoolManagerTest is Test, Deployers {
         params.liquidityDelta = LIQUIDITY_PARAMS.liquidityDelta;
         modifyLiquidityRouter.modifyLiquidity(key, params, ZERO_BYTES);
 
-        IPoolManager.SwapParams memory swapParams =
-            IPoolManager.SwapParams(false, amountSpecified, TickMath.MAX_SQRT_PRICE - 1);
+        PoolOperation.SwapParams memory swapParams =
+            PoolOperation.SwapParams(false, amountSpecified, TickMath.MAX_SQRT_PRICE - 1);
         BalanceDelta delta = swapRouter.swap(key, swapParams, PoolSwapTest.TestSettings(false, false), ZERO_BYTES);
         uint256 expectedProtocolFee =
             uint256(uint128(-delta.amount1())) * protocolFee1 / ProtocolFeeLibrary.PIPS_DENOMINATOR;
@@ -1052,7 +1053,7 @@ contract PoolManagerTest is Test, Deployers {
 
         swapRouter.swap(
             key,
-            IPoolManager.SwapParams(true, -10000, SQRT_PRICE_1_2),
+            PoolOperation.SwapParams(true, -10000, SQRT_PRICE_1_2),
             PoolSwapTest.TestSettings(false, false),
             ZERO_BYTES
         );
@@ -1081,7 +1082,7 @@ contract PoolManagerTest is Test, Deployers {
 
         swapRouter.swap(
             key,
-            IPoolManager.SwapParams(true, 10000, SQRT_PRICE_1_2),
+            PoolOperation.SwapParams(true, 10000, SQRT_PRICE_1_2),
             PoolSwapTest.TestSettings(false, false),
             ZERO_BYTES
         );
@@ -1109,7 +1110,7 @@ contract PoolManagerTest is Test, Deployers {
 
         swapRouter.swap(
             key,
-            IPoolManager.SwapParams(false, -10000, TickMath.MAX_SQRT_PRICE - 1),
+            PoolOperation.SwapParams(false, -10000, TickMath.MAX_SQRT_PRICE - 1),
             PoolSwapTest.TestSettings(false, false),
             ZERO_BYTES
         );
@@ -1138,7 +1139,7 @@ contract PoolManagerTest is Test, Deployers {
 
         swapRouter.swap{value: 10000}(
             nativeKey,
-            IPoolManager.SwapParams(true, -10000, SQRT_PRICE_1_2),
+            PoolOperation.SwapParams(true, -10000, SQRT_PRICE_1_2),
             PoolSwapTest.TestSettings(false, false),
             ZERO_BYTES
         );
@@ -1168,7 +1169,7 @@ contract PoolManagerTest is Test, Deployers {
 
         swapRouter.swap{value: 10000}(
             nativeKey,
-            IPoolManager.SwapParams(true, -10000, SQRT_PRICE_1_2),
+            PoolOperation.SwapParams(true, -10000, SQRT_PRICE_1_2),
             PoolSwapTest.TestSettings(false, false),
             ZERO_BYTES
         );
@@ -1235,15 +1236,15 @@ contract PoolManagerTest is Test, Deployers {
     //     manager.initialize(key, SQRT_PRICE_1_1);
 
     //     // populate feeGrowthGlobalX128 struct w/ modify + swap
-    //     modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-120, 120, 5 ether, 0));
+    //     modifyLiquidityRouter.modifyLiquidity(key, PoolOperation.ModifyLiquidityParams(-120, 120, 5 ether, 0));
     //     swapRouter.swap(
     //         key,
-    //         IPoolManager.SwapParams(false, 1 ether, TickMath.MAX_SQRT_PRICE - 1),
+    //         PoolOperation.SwapParams(false, 1 ether, TickMath.MAX_SQRT_PRICE - 1),
     //         PoolSwapTest.TestSettings(true, true)
     //     );
     //     swapRouter.swap(
     //         key,
-    //         IPoolManager.SwapParams(true, 5 ether, TickMath.MIN_SQRT_PRICE + 1),
+    //         PoolOperation.SwapParams(true, 5 ether, TickMath.MIN_SQRT_PRICE + 1),
     //         PoolSwapTest.TestSettings(true, true)
     //     );
 

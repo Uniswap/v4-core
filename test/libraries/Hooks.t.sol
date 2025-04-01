@@ -17,6 +17,7 @@ import {Deployers} from "test/utils/Deployers.sol";
 import {ProtocolFees} from "../../src/ProtocolFees.sol";
 import {PoolId} from "../../src/types/PoolId.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
+import {PoolOperation} from "../../src/types/PoolOperation.sol";
 import {IERC20Minimal} from "../../src/interfaces/external/IERC20Minimal.sol";
 import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
 import {BaseTestHooks} from "../../src/test/BaseTestHooks.sol";
@@ -66,11 +67,11 @@ contract HooksTest is Test, Deployers {
     function test_beforeAfterAddLiquidity_beforeAfterRemoveLiquidity_succeedsWithHook() public {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 1e18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyLiquidityRouter), 1e18);
-        modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(0, 60, 1e18, 0), new bytes(111));
+        modifyLiquidityRouter.modifyLiquidity(key, PoolOperation.ModifyLiquidityParams(0, 60, 1e18, 0), new bytes(111));
         assertEq(mockHooks.beforeAddLiquidityData(), new bytes(111));
         assertEq(mockHooks.afterAddLiquidityData(), new bytes(111));
 
-        modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(0, 60, -1e18, 0), new bytes(222));
+        modifyLiquidityRouter.modifyLiquidity(key, PoolOperation.ModifyLiquidityParams(0, 60, -1e18, 0), new bytes(222));
         assertEq(mockHooks.beforeRemoveLiquidityData(), new bytes(222));
         assertEq(mockHooks.afterRemoveLiquidityData(), new bytes(222));
     }
@@ -78,7 +79,7 @@ contract HooksTest is Test, Deployers {
     function test_beforeAfterAddLiquidity_calledWithPositiveLiquidityDelta() public {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 1e18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyLiquidityRouter), 1e18);
-        modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(0, 60, 100, 0), new bytes(111));
+        modifyLiquidityRouter.modifyLiquidity(key, PoolOperation.ModifyLiquidityParams(0, 60, 100, 0), new bytes(111));
         assertEq(mockHooks.beforeAddLiquidityData(), new bytes(111));
         assertEq(mockHooks.afterAddLiquidityData(), new bytes(111));
     }
@@ -86,11 +87,11 @@ contract HooksTest is Test, Deployers {
     function test_beforeAfterRemoveLiquidity_calledWithZeroLiquidityDelta() public {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 1e18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyLiquidityRouter), 1e18);
-        modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(0, 60, 1e18, 0), new bytes(111));
+        modifyLiquidityRouter.modifyLiquidity(key, PoolOperation.ModifyLiquidityParams(0, 60, 1e18, 0), new bytes(111));
         assertEq(mockHooks.beforeAddLiquidityData(), new bytes(111));
         assertEq(mockHooks.afterAddLiquidityData(), new bytes(111));
 
-        modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(0, 60, 0, 0), new bytes(222));
+        modifyLiquidityRouter.modifyLiquidity(key, PoolOperation.ModifyLiquidityParams(0, 60, 0, 0), new bytes(222));
         assertEq(mockHooks.beforeAddLiquidityData(), new bytes(111));
         assertEq(mockHooks.afterAddLiquidityData(), new bytes(111));
         assertEq(mockHooks.beforeRemoveLiquidityData(), new bytes(222));
@@ -98,10 +99,10 @@ contract HooksTest is Test, Deployers {
     }
 
     function test_beforeAfterRemoveLiquidity_calledWithPositiveLiquidityDelta() public {
-        modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(0, 60, 1e18, 0), new bytes(111));
+        modifyLiquidityRouter.modifyLiquidity(key, PoolOperation.ModifyLiquidityParams(0, 60, 1e18, 0), new bytes(111));
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 1e18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyLiquidityRouter), 1e18);
-        modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(0, 60, -1e18, 0), new bytes(111));
+        modifyLiquidityRouter.modifyLiquidity(key, PoolOperation.ModifyLiquidityParams(0, 60, -1e18, 0), new bytes(111));
         assertEq(mockHooks.beforeRemoveLiquidityData(), new bytes(111));
         assertEq(mockHooks.afterRemoveLiquidityData(), new bytes(111));
     }
@@ -141,8 +142,8 @@ contract HooksTest is Test, Deployers {
     }
 
     function test_swap_succeedsWithHook() public {
-        IPoolManager.SwapParams memory swapParams =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
+        PoolOperation.SwapParams memory swapParams =
+            PoolOperation.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
@@ -157,7 +158,7 @@ contract HooksTest is Test, Deployers {
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         swapRouter.swap(
             key,
-            IPoolManager.SwapParams(false, 100, SQRT_PRICE_1_1 + 60),
+            PoolOperation.SwapParams(false, 100, SQRT_PRICE_1_1 + 60),
             PoolSwapTest.TestSettings(true, true),
             ZERO_BYTES
         );
@@ -168,7 +169,7 @@ contract HooksTest is Test, Deployers {
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         swapRouter.swap(
             key,
-            IPoolManager.SwapParams(false, 100, SQRT_PRICE_1_1 + 60),
+            PoolOperation.SwapParams(false, 100, SQRT_PRICE_1_1 + 60),
             PoolSwapTest.TestSettings(true, true),
             ZERO_BYTES
         );
@@ -1003,8 +1004,8 @@ contract HooksTest is Test, Deployers {
         PoolKey memory key = PoolKey(currency0, currency1, 0, 60, IHooks(revertingHook));
         manager.initialize(key, SQRT_PRICE_1_1);
 
-        IPoolManager.SwapParams memory swapParams =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
+        PoolOperation.SwapParams memory swapParams =
+            PoolOperation.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
@@ -1031,8 +1032,8 @@ contract HooksTest is Test, Deployers {
         PoolKey memory key = PoolKey(currency0, currency1, 0, 60, IHooks(address(revertingHook)));
         manager.initialize(key, SQRT_PRICE_1_1);
 
-        IPoolManager.SwapParams memory swapParams =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
+        PoolOperation.SwapParams memory swapParams =
+            PoolOperation.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});

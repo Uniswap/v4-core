@@ -10,6 +10,7 @@ import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
+import {PoolOperation} from "../src/types/PoolOperation.sol";
 import {PoolManager} from "../src/PoolManager.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
@@ -197,8 +198,8 @@ contract TestDynamicFees is Test, Deployers {
 
         dynamicFeesHooks.setFee(500000);
 
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
+        PoolOperation.SwapParams memory params =
+            PoolOperation.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
@@ -215,8 +216,8 @@ contract TestDynamicFees is Test, Deployers {
 
         dynamicFeesHooks.setFee(1000000);
 
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
+        PoolOperation.SwapParams memory params =
+            PoolOperation.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
@@ -232,8 +233,8 @@ contract TestDynamicFees is Test, Deployers {
         vm.prank(feeController);
         manager.setProtocolFee(key, 1000);
 
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
+        PoolOperation.SwapParams memory params =
+            PoolOperation.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
@@ -249,8 +250,8 @@ contract TestDynamicFees is Test, Deployers {
         vm.prank(feeController);
         manager.setProtocolFee(key, 1000);
 
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -1000, sqrtPriceLimitX96: SQRT_PRICE_1_2});
+        PoolOperation.SwapParams memory params =
+            PoolOperation.SwapParams({zeroForOne: true, amountSpecified: -1000, sqrtPriceLimitX96: SQRT_PRICE_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
@@ -298,7 +299,7 @@ contract TestDynamicFees is Test, Deployers {
         vm.prank(feeController);
         manager.setProtocolFee(key, protocolFee);
 
-        IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
+        PoolOperation.SwapParams memory params = PoolOperation.SwapParams({
             zeroForOne: true,
             amountSpecified: amountSpecified,
             sqrtPriceLimitX96: SQRT_PRICE_1_2

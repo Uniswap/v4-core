@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {Hooks} from "../libraries/Hooks.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {PoolOperation} from "../types/PoolOperation.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
@@ -42,7 +43,7 @@ contract MockHooks is IHooks {
     function beforeAddLiquidity(
         address,
         PoolKey calldata,
-        IPoolManager.ModifyLiquidityParams calldata,
+        PoolOperation.ModifyLiquidityParams calldata,
         bytes calldata hookData
     ) external override returns (bytes4) {
         beforeAddLiquidityData = hookData;
@@ -53,7 +54,7 @@ contract MockHooks is IHooks {
     function afterAddLiquidity(
         address,
         PoolKey calldata,
-        IPoolManager.ModifyLiquidityParams calldata,
+        PoolOperation.ModifyLiquidityParams calldata,
         BalanceDelta,
         BalanceDelta,
         bytes calldata hookData
@@ -66,7 +67,7 @@ contract MockHooks is IHooks {
     function beforeRemoveLiquidity(
         address,
         PoolKey calldata,
-        IPoolManager.ModifyLiquidityParams calldata,
+        PoolOperation.ModifyLiquidityParams calldata,
         bytes calldata hookData
     ) external override returns (bytes4) {
         beforeRemoveLiquidityData = hookData;
@@ -77,7 +78,7 @@ contract MockHooks is IHooks {
     function afterRemoveLiquidity(
         address,
         PoolKey calldata,
-        IPoolManager.ModifyLiquidityParams calldata,
+        PoolOperation.ModifyLiquidityParams calldata,
         BalanceDelta,
         BalanceDelta,
         bytes calldata hookData
@@ -87,7 +88,7 @@ contract MockHooks is IHooks {
         return (returnValues[selector] == bytes4(0) ? selector : returnValues[selector], BalanceDeltaLibrary.ZERO_DELTA);
     }
 
-    function beforeSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, bytes calldata hookData)
+    function beforeSwap(address, PoolKey calldata, PoolOperation.SwapParams calldata, bytes calldata hookData)
         external
         override
         returns (bytes4, BeforeSwapDelta, uint24)
@@ -104,7 +105,7 @@ contract MockHooks is IHooks {
     function afterSwap(
         address,
         PoolKey calldata,
-        IPoolManager.SwapParams calldata,
+        PoolOperation.SwapParams calldata,
         BalanceDelta,
         bytes calldata hookData
     ) external override returns (bytes4, int128) {

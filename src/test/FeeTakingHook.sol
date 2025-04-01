@@ -5,6 +5,7 @@ import {Hooks} from "../libraries/Hooks.sol";
 import {SafeCast} from "../libraries/SafeCast.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {PoolOperation} from "../types/PoolOperation.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
@@ -33,7 +34,7 @@ contract FeeTakingHook is BaseTestHooks {
     function afterSwap(
         address, /* sender **/
         PoolKey calldata key,
-        IPoolManager.SwapParams calldata params,
+        PoolOperation.SwapParams calldata params,
         BalanceDelta delta,
         bytes calldata /* hookData **/
     ) external override onlyPoolManager returns (bytes4, int128) {
@@ -53,7 +54,7 @@ contract FeeTakingHook is BaseTestHooks {
     function afterRemoveLiquidity(
         address, /* sender **/
         PoolKey calldata key,
-        IPoolManager.ModifyLiquidityParams calldata, /* params **/
+        PoolOperation.ModifyLiquidityParams calldata, /* params **/
         BalanceDelta delta,
         BalanceDelta,
         bytes calldata /* hookData **/
@@ -72,7 +73,7 @@ contract FeeTakingHook is BaseTestHooks {
     function afterAddLiquidity(
         address, /* sender **/
         PoolKey calldata key,
-        IPoolManager.ModifyLiquidityParams calldata, /* params **/
+        PoolOperation.ModifyLiquidityParams calldata, /* params **/
         BalanceDelta delta,
         BalanceDelta,
         bytes calldata /* hookData **/
