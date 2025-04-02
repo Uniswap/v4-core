@@ -16,7 +16,7 @@ import {IUnlockCallback} from "./interfaces/callback/IUnlockCallback.sol";
 import {ProtocolFees} from "./ProtocolFees.sol";
 import {ERC6909Claims} from "./ERC6909Claims.sol";
 import {PoolId} from "./types/PoolId.sol";
-import {PoolOperation} from "./types/PoolOperation.sol";
+import {ModifyLiquidityParams, SwapParams} from "./types/PoolOperation.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
 import {BeforeSwapDelta} from "./types/BeforeSwapDelta.sol";
 import {Lock} from "./libraries/Lock.sol";
@@ -142,11 +142,12 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function modifyLiquidity(
-        PoolKey memory key,
-        PoolOperation.ModifyLiquidityParams memory params,
-        bytes calldata hookData
-    ) external onlyWhenUnlocked noDelegateCall returns (BalanceDelta callerDelta, BalanceDelta feesAccrued) {
+    function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
+        external
+        onlyWhenUnlocked
+        noDelegateCall
+        returns (BalanceDelta callerDelta, BalanceDelta feesAccrued)
+    {
         PoolId id = key.toId();
         {
             Pool.State storage pool = _getPool(id);
@@ -183,7 +184,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function swap(PoolKey memory key, PoolOperation.SwapParams memory params, bytes calldata hookData)
+    function swap(PoolKey memory key, SwapParams memory params, bytes calldata hookData)
         external
         onlyWhenUnlocked
         noDelegateCall

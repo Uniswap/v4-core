@@ -10,7 +10,7 @@ import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {IExtsload} from "./IExtsload.sol";
 import {IExttload} from "./IExttload.sol";
-import {PoolOperation} from "../types/PoolOperation.sol";
+import {ModifyLiquidityParams, SwapParams} from "../types/PoolOperation.sol";
 
 /// @notice Interface for the PoolManager
 interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
@@ -130,7 +130,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @dev Note that feesAccrued can be artificially inflated by a malicious actor and integrators should be careful using the value
     /// For pools with a single liquidity position, actors can donate to themselves to inflate feeGrowthGlobal (and consequently feesAccrued)
     /// atomically donating and collecting fees in the same unlockCallback may make the inflated value more extreme
-    function modifyLiquidity(PoolKey memory key, PoolOperation.ModifyLiquidityParams memory params, bytes calldata hookData)
+    function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
         external
         returns (BalanceDelta callerDelta, BalanceDelta feesAccrued);
 
@@ -142,7 +142,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @dev Swapping on low liquidity pools may cause unexpected swap amounts when liquidity available is less than amountSpecified.
     /// Additionally note that if interacting with hooks that have the BEFORE_SWAP_RETURNS_DELTA_FLAG or AFTER_SWAP_RETURNS_DELTA_FLAG
     /// the hook may alter the swap input/output. Integrators should perform checks on the returned swapDelta.
-    function swap(PoolKey memory key, PoolOperation.SwapParams memory params, bytes calldata hookData)
+    function swap(PoolKey memory key, SwapParams memory params, bytes calldata hookData)
         external
         returns (BalanceDelta swapDelta);
 

@@ -6,7 +6,7 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {CurrencySettler} from "../../test/utils/CurrencySettler.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {PoolOperation} from "../types/PoolOperation.sol";
+import {SwapParams} from "../types/PoolOperation.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
 import {BaseTestHooks} from "./BaseTestHooks.sol";
@@ -47,7 +47,7 @@ contract DeltaReturningHook is BaseTestHooks {
     function beforeSwap(
         address, /* sender **/
         PoolKey calldata key,
-        PoolOperation.SwapParams calldata params,
+        SwapParams calldata params,
         bytes calldata /* hookData **/
     ) external override onlyPoolManager returns (bytes4, BeforeSwapDelta, uint24) {
         (Currency specifiedCurrency, Currency unspecifiedCurrency) = _sortCurrencies(key, params);
@@ -63,7 +63,7 @@ contract DeltaReturningHook is BaseTestHooks {
     function afterSwap(
         address, /* sender **/
         PoolKey calldata key,
-        PoolOperation.SwapParams calldata params,
+        SwapParams calldata params,
         BalanceDelta, /* delta **/
         bytes calldata /* hookData **/
     ) external override onlyPoolManager returns (bytes4, int128) {
@@ -73,7 +73,7 @@ contract DeltaReturningHook is BaseTestHooks {
         return (IHooks.afterSwap.selector, deltaUnspecifiedAfterSwap);
     }
 
-    function _sortCurrencies(PoolKey calldata key, PoolOperation.SwapParams calldata params)
+    function _sortCurrencies(PoolKey calldata key, SwapParams calldata params)
         internal
         pure
         returns (Currency specified, Currency unspecified)

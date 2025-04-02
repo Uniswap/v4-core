@@ -5,7 +5,7 @@ import {Currency} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {PoolOperation} from "../types/PoolOperation.sol";
+import {SwapParams} from "../types/PoolOperation.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
@@ -22,10 +22,10 @@ contract SwapRouterNoChecks is PoolTestBase {
     struct CallbackData {
         address sender;
         PoolKey key;
-        PoolOperation.SwapParams params;
+        SwapParams params;
     }
 
-    function swap(PoolKey memory key, PoolOperation.SwapParams memory params) external payable {
+    function swap(PoolKey memory key, SwapParams memory params) external payable {
         manager.unlock(abi.encode(CallbackData(msg.sender, key, params)));
     }
 

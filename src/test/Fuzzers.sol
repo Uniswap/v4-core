@@ -5,7 +5,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {StdUtils} from "forge-std/StdUtils.sol";
 
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-import {PoolOperation} from "../types/PoolOperation.sol";
+import {ModifyLiquidityParams} from "../types/PoolOperation.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {TickMath} from "../libraries/TickMath.sol";
@@ -132,11 +132,11 @@ contract Fuzzers is StdUtils {
     /// @param key The pool key
     /// @param params IPoolManager.ModifyLiquidityParams Note that these parameters are unbounded
     /// @param sqrtPriceX96 The current sqrt price
-    function createFuzzyLiquidityParams(
-        PoolKey memory key,
-        PoolOperation.ModifyLiquidityParams memory params,
-        uint160 sqrtPriceX96
-    ) internal pure returns (PoolOperation.ModifyLiquidityParams memory result) {
+    function createFuzzyLiquidityParams(PoolKey memory key, ModifyLiquidityParams memory params, uint160 sqrtPriceX96)
+        internal
+        pure
+        returns (ModifyLiquidityParams memory result)
+    {
         (result.tickLower, result.tickUpper) = boundTicks(key, params.tickLower, params.tickUpper);
         int256 liquidityDeltaFromAmounts =
             getLiquidityDeltaFromAmounts(result.tickLower, result.tickUpper, sqrtPriceX96);
@@ -146,10 +146,10 @@ contract Fuzzers is StdUtils {
     // Creates liquidity parameters with a stricter bound. Should be used if multiple positions being initialized on the pool, with potential for tick overlap.
     function createFuzzyLiquidityParamsWithTightBound(
         PoolKey memory key,
-        PoolOperation.ModifyLiquidityParams memory params,
+        ModifyLiquidityParams memory params,
         uint160 sqrtPriceX96,
         uint256 maxPositions
-    ) internal pure returns (PoolOperation.ModifyLiquidityParams memory result) {
+    ) internal pure returns (ModifyLiquidityParams memory result) {
         (result.tickLower, result.tickUpper) = boundTicks(key, params.tickLower, params.tickUpper);
         int256 liquidityDeltaFromAmounts =
             getLiquidityDeltaFromAmounts(result.tickLower, result.tickUpper, sqrtPriceX96);
@@ -161,10 +161,10 @@ contract Fuzzers is StdUtils {
     function createFuzzyLiquidity(
         PoolModifyLiquidityTest modifyLiquidityRouter,
         PoolKey memory key,
-        PoolOperation.ModifyLiquidityParams memory params,
+        ModifyLiquidityParams memory params,
         uint160 sqrtPriceX96,
         bytes memory hookData
-    ) internal returns (PoolOperation.ModifyLiquidityParams memory result, BalanceDelta delta) {
+    ) internal returns (ModifyLiquidityParams memory result, BalanceDelta delta) {
         result = createFuzzyLiquidityParams(key, params, sqrtPriceX96);
         delta = modifyLiquidityRouter.modifyLiquidity(key, result, hookData);
     }
@@ -173,11 +173,11 @@ contract Fuzzers is StdUtils {
     function createFuzzyLiquidityWithTightBound(
         PoolModifyLiquidityTest modifyLiquidityRouter,
         PoolKey memory key,
-        PoolOperation.ModifyLiquidityParams memory params,
+        ModifyLiquidityParams memory params,
         uint160 sqrtPriceX96,
         bytes memory hookData,
         uint256 maxPositions
-    ) internal returns (PoolOperation.ModifyLiquidityParams memory result, BalanceDelta delta) {
+    ) internal returns (ModifyLiquidityParams memory result, BalanceDelta delta) {
         result = createFuzzyLiquidityParamsWithTightBound(key, params, sqrtPriceX96, maxPositions);
         delta = modifyLiquidityRouter.modifyLiquidity(key, result, hookData);
     }

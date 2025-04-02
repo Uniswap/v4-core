@@ -8,7 +8,7 @@ import {Position} from "../libraries/Position.sol";
 import {LPFeeLibrary} from "../libraries/LPFeeLibrary.sol";
 import {Currency} from "../types/Currency.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {PoolOperation} from "../types/PoolOperation.sol";
+import {ModifyLiquidityParams, SwapParams} from "../types/PoolOperation.sol";
 import {TickMath} from "../libraries/TickMath.sol";
 import {NoDelegateCall} from "../NoDelegateCall.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
@@ -95,11 +95,12 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
     }
 
     /// @inheritdoc IPoolManager
-    function modifyLiquidity(
-        PoolKey memory key,
-        PoolOperation.ModifyLiquidityParams memory params,
-        bytes calldata hookData
-    ) external onlyWhenUnlocked noDelegateCall returns (BalanceDelta callerDelta, BalanceDelta feesAccrued) {
+    function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
+        external
+        onlyWhenUnlocked
+        noDelegateCall
+        returns (BalanceDelta callerDelta, BalanceDelta feesAccrued)
+    {
         bytes memory result = _delegateCall(
             _delegateManager, abi.encodeWithSelector(this.modifyLiquidity.selector, key, params, hookData)
         );
@@ -108,7 +109,7 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
     }
 
     /// @inheritdoc IPoolManager
-    function swap(PoolKey memory key, PoolOperation.SwapParams memory params, bytes calldata hookData)
+    function swap(PoolKey memory key, SwapParams memory params, bytes calldata hookData)
         external
         onlyWhenUnlocked
         noDelegateCall

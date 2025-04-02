@@ -8,7 +8,7 @@ import {Currency, CurrencyLibrary} from "../../src/types/Currency.sol";
 import {IHooks} from "../../src/interfaces/IHooks.sol";
 import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
 import {PoolManager} from "../../src/PoolManager.sol";
-import {PoolOperation} from "../../src/types/PoolOperation.sol";
+import {ModifyLiquidityParams, SwapParams} from "../../src/types/PoolOperation.sol";
 import {PoolId} from "../../src/types/PoolId.sol";
 import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
@@ -43,12 +43,12 @@ contract Deployers is Test {
     uint160 public constant MIN_PRICE_LIMIT = TickMath.MIN_SQRT_PRICE + 1;
     uint160 public constant MAX_PRICE_LIMIT = TickMath.MAX_SQRT_PRICE - 1;
 
-    PoolOperation.ModifyLiquidityParams public LIQUIDITY_PARAMS =
-        PoolOperation.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18, salt: 0});
-    PoolOperation.ModifyLiquidityParams public REMOVE_LIQUIDITY_PARAMS =
-        PoolOperation.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18, salt: 0});
-    PoolOperation.SwapParams public SWAP_PARAMS =
-        PoolOperation.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
+    ModifyLiquidityParams public LIQUIDITY_PARAMS =
+        ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18, salt: 0});
+    ModifyLiquidityParams public REMOVE_LIQUIDITY_PARAMS =
+        ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18, salt: 0});
+    SwapParams public SWAP_PARAMS =
+        SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
 
     // Global variables
     Currency internal currency0;
@@ -223,7 +223,7 @@ contract Deployers is Test {
 
         return swapRouter.swap{value: value}(
             _key,
-            PoolOperation.SwapParams({
+            SwapParams({
                 zeroForOne: zeroForOne,
                 amountSpecified: amountSpecified,
                 sqrtPriceLimitX96: zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
@@ -245,7 +245,7 @@ contract Deployers is Test {
             amount1
         );
 
-        PoolOperation.ModifyLiquidityParams memory params = PoolOperation.ModifyLiquidityParams({
+        ModifyLiquidityParams memory params = ModifyLiquidityParams({
             tickLower: LIQUIDITY_PARAMS.tickLower,
             tickUpper: LIQUIDITY_PARAMS.tickUpper,
             liquidityDelta: int128(liquidityDelta),
@@ -268,7 +268,7 @@ contract Deployers is Test {
 
         return swapRouter.swap{value: msgValue}(
             _key,
-            PoolOperation.SwapParams({
+            SwapParams({
                 zeroForOne: zeroForOne,
                 amountSpecified: amountSpecified,
                 sqrtPriceLimitX96: zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT

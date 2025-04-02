@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {IUnlockCallback} from "../interfaces/callback/IUnlockCallback.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
-import {PoolOperation} from "../types/PoolOperation.sol";
+import {ModifyLiquidityParams, SwapParams} from "../types/PoolOperation.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {Constants} from "../../test/utils/Constants.sol";
 import {Test} from "forge-std/Test.sol";
@@ -74,14 +74,14 @@ contract NestedActionExecutor is Test, PoolTestBase {
 
     error KeyNotSet();
 
-    PoolOperation.ModifyLiquidityParams internal ADD_LIQUIDITY_PARAMS =
-        PoolOperation.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18, salt: 0});
+    ModifyLiquidityParams internal ADD_LIQUIDITY_PARAMS =
+        ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18, salt: 0});
 
-    PoolOperation.ModifyLiquidityParams internal REMOVE_LIQUIDITY_PARAMS =
-        PoolOperation.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18, salt: 0});
+    ModifyLiquidityParams internal REMOVE_LIQUIDITY_PARAMS =
+        ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18, salt: 0});
 
-    PoolOperation.SwapParams internal SWAP_PARAMS =
-        PoolOperation.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: Constants.SQRT_PRICE_1_2});
+    SwapParams internal SWAP_PARAMS =
+        SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: Constants.SQRT_PRICE_1_2});
 
     uint256 internal DONATE_AMOUNT0 = 12345e6;
     uint256 internal DONATE_AMOUNT1 = 98765e4;
