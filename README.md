@@ -89,11 +89,14 @@ contract MyContract is IUnlockCallback {
     }
 
     function unlockCallback(bytes calldata data) external returns (bytes memory) {
+        // disallow arbitrary caller
+        if (msg.sender != address(poolManager) revert Unauthorized();
         // perform pool actions
         poolManager.swap(...)
     }
 }
 
+error Unauthorized();
 ```
 
 ## License
