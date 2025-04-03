@@ -6,6 +6,7 @@ import {IHooks} from "../../src/interfaces/IHooks.sol";
 import {Hooks} from "../../src/libraries/Hooks.sol";
 import {TickMath} from "../../src/libraries/TickMath.sol";
 import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
+import {ModifyLiquidityParams} from "../../src/types/PoolOperation.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
 import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
 import {PoolId} from "../../src/types/PoolId.sol";
@@ -37,13 +38,9 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
 
     function test_getSlot0() public {
         // create liquidity
-        modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-60, 60, 10_000 ether, 0), ZERO_BYTES
-        );
+        modifyLiquidityRouter.modifyLiquidity(key, ModifyLiquidityParams(-60, 60, 10_000 ether, 0), ZERO_BYTES);
 
-        modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-600, 600, 10_000 ether, 0), ZERO_BYTES
-        );
+        modifyLiquidityRouter.modifyLiquidity(key, ModifyLiquidityParams(-600, 600, 10_000 ether, 0), ZERO_BYTES);
 
         // swap to create fees, crossing a tick
         uint256 swapAmount = 100 ether;
@@ -60,7 +57,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
     }
 
     function test_getTickLiquidity() public {
-        modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-60, 60, 10 ether, 0), ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity(key, ModifyLiquidityParams(-60, 60, 10 ether, 0), ZERO_BYTES);
 
         (uint128 liquidityGrossLower, int128 liquidityNetLower) = StateLibrary.getTickLiquidity(manager, poolId, -60);
         vm.snapshotGasLastCall("extsload getTickLiquidity");
@@ -72,8 +69,8 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
         assertEq(liquidityNetUpper, -10 ether);
     }
 
-    function test_fuzz_getTickLiquidity(IPoolManager.ModifyLiquidityParams memory params) public {
-        (IPoolManager.ModifyLiquidityParams memory _params,) =
+    function test_fuzz_getTickLiquidity(ModifyLiquidityParams memory params) public {
+        (ModifyLiquidityParams memory _params,) =
             Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, params, SQRT_PRICE_1_1, ZERO_BYTES);
         uint128 liquidityDelta = uint128(uint256(_params.liquidityDelta));
 
@@ -100,13 +97,13 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
     }
 
     function test_fuzz_getTickLiquidity_two_positions(
-        IPoolManager.ModifyLiquidityParams memory paramsA,
-        IPoolManager.ModifyLiquidityParams memory paramsB
+        ModifyLiquidityParams memory paramsA,
+        ModifyLiquidityParams memory paramsB
     ) public {
-        (IPoolManager.ModifyLiquidityParams memory _paramsA,) = Fuzzers.createFuzzyLiquidityWithTightBound(
+        (ModifyLiquidityParams memory _paramsA,) = Fuzzers.createFuzzyLiquidityWithTightBound(
             modifyLiquidityRouter, key, paramsA, SQRT_PRICE_1_1, ZERO_BYTES, 2
         );
-        (IPoolManager.ModifyLiquidityParams memory _paramsB,) = Fuzzers.createFuzzyLiquidityWithTightBound(
+        (ModifyLiquidityParams memory _paramsB,) = Fuzzers.createFuzzyLiquidityWithTightBound(
             modifyLiquidityRouter, key, paramsB, SQRT_PRICE_1_1, ZERO_BYTES, 2
         );
 
@@ -169,9 +166,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
     function test_getFeeGrowthGlobals0() public {
         // create liquidity
         uint256 liquidity = 10_000 ether;
-        modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-60, 60, int256(liquidity), 0), ZERO_BYTES
-        );
+        modifyLiquidityRouter.modifyLiquidity(key, ModifyLiquidityParams(-60, 60, int256(liquidity), 0), ZERO_BYTES);
 
         (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1) = StateLibrary.getFeeGrowthGlobals(manager, poolId);
         assertEq(feeGrowthGlobal0, 0);
@@ -192,9 +187,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
     function test_getFeeGrowthGlobals1() public {
         // create liquidity
         uint256 liquidity = 10_000 ether;
-        modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-60, 60, int256(liquidity), 0), ZERO_BYTES
-        );
+        modifyLiquidityRouter.modifyLiquidity(key, ModifyLiquidityParams(-60, 60, int256(liquidity), 0), ZERO_BYTES);
 
         (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1) = StateLibrary.getFeeGrowthGlobals(manager, poolId);
         assertEq(feeGrowthGlobal0, 0);
@@ -212,18 +205,16 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
     }
 
     function test_getLiquidity() public {
-        modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-60, 60, 10 ether, 0), ZERO_BYTES);
-        modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-120, 120, 10 ether, 0), ZERO_BYTES
-        );
+        modifyLiquidityRouter.modifyLiquidity(key, ModifyLiquidityParams(-60, 60, 10 ether, 0), ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity(key, ModifyLiquidityParams(-120, 120, 10 ether, 0), ZERO_BYTES);
 
         uint128 liquidity = StateLibrary.getLiquidity(manager, poolId);
         vm.snapshotGasLastCall("extsload getLiquidity");
         assertEq(liquidity, 20 ether);
     }
 
-    function test_fuzz_getLiquidity(IPoolManager.ModifyLiquidityParams memory params) public {
-        (IPoolManager.ModifyLiquidityParams memory _params,) =
+    function test_fuzz_getLiquidity(ModifyLiquidityParams memory params) public {
+        (ModifyLiquidityParams memory _params,) =
             Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, params, SQRT_PRICE_1_1, ZERO_BYTES);
         (, int24 tick,,) = StateLibrary.getSlot0(manager, poolId);
         uint128 liquidity = StateLibrary.getLiquidity(manager, poolId);
@@ -241,7 +232,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
         int24 tickUpper = 300;
         // create liquidity
         modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(tickLower, tickUpper, 10_000 ether, 0), ZERO_BYTES
+            key, ModifyLiquidityParams(tickLower, tickUpper, 10_000 ether, 0), ZERO_BYTES
         );
 
         (int16 wordPos, uint8 bitPos) = TickBitmap.position(tickLower / key.tickSpacing);
@@ -256,8 +247,8 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
         assertEq(tickBitmap, 1 << bitPos);
     }
 
-    function test_fuzz_getTickBitmap(IPoolManager.ModifyLiquidityParams memory params) public {
-        (IPoolManager.ModifyLiquidityParams memory _params,) =
+    function test_fuzz_getTickBitmap(ModifyLiquidityParams memory params) public {
+        (ModifyLiquidityParams memory _params,) =
             Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, params, SQRT_PRICE_1_1, ZERO_BYTES);
 
         (int16 wordPos, uint8 bitPos) = TickBitmap.position(_params.tickLower / key.tickSpacing);
@@ -276,9 +267,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
 
     function test_getPositionInfo() public {
         // create liquidity
-        modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-60, 60, 10_000 ether, 0), ZERO_BYTES
-        );
+        modifyLiquidityRouter.modifyLiquidity(key, ModifyLiquidityParams(-60, 60, 10_000 ether, 0), ZERO_BYTES);
 
         // swap to create fees, crossing a tick
         uint256 swapAmount = 10 ether;
@@ -287,7 +276,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
         assertNotEq(currentTick, -139);
 
         // poke the LP so that fees are updated
-        modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-60, 60, 0, 0), ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity(key, ModifyLiquidityParams(-60, 60, 0, 0), ZERO_BYTES);
 
         bytes32 positionId =
             keccak256(abi.encodePacked(address(modifyLiquidityRouter), int24(-60), int24(60), bytes32(0)));
@@ -302,12 +291,10 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
         assertEq(feeGrowthInside1X128, 0);
     }
 
-    function test_fuzz_getPositionInfo(
-        IPoolManager.ModifyLiquidityParams memory params,
-        uint256 swapAmount,
-        bool zeroForOne
-    ) public {
-        (IPoolManager.ModifyLiquidityParams memory _params, BalanceDelta delta) =
+    function test_fuzz_getPositionInfo(ModifyLiquidityParams memory params, uint256 swapAmount, bool zeroForOne)
+        public
+    {
+        (ModifyLiquidityParams memory _params, BalanceDelta delta) =
             createFuzzyLiquidity(modifyLiquidityRouter, key, params, SQRT_PRICE_1_1, ZERO_BYTES);
 
         uint256 delta0 = uint256(int256(-delta.amount0()));
@@ -323,7 +310,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
 
         // poke the LP so that fees are updated
         modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(_params.tickLower, _params.tickUpper, 0, 0), ZERO_BYTES
+            key, ModifyLiquidityParams(_params.tickLower, _params.tickUpper, 0, 0), ZERO_BYTES
         );
 
         bytes32 positionId = keccak256(
@@ -345,13 +332,9 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
 
     function test_getTickFeeGrowthOutside() public {
         // create liquidity
-        modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-60, 60, 10_000 ether, 0), ZERO_BYTES
-        );
+        modifyLiquidityRouter.modifyLiquidity(key, ModifyLiquidityParams(-60, 60, 10_000 ether, 0), ZERO_BYTES);
 
-        modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-600, 600, 10_000 ether, 0), ZERO_BYTES
-        );
+        modifyLiquidityRouter.modifyLiquidity(key, ModifyLiquidityParams(-600, 600, 10_000 ether, 0), ZERO_BYTES);
 
         // swap to create fees, crossing a tick
         uint256 swapAmount = 100 ether;
@@ -377,13 +360,9 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
     // also hard to fuzz because of feeGrowthOutside
     function test_getTickInfo() public {
         // create liquidity
-        modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-60, 60, 10_000 ether, 0), ZERO_BYTES
-        );
+        modifyLiquidityRouter.modifyLiquidity(key, ModifyLiquidityParams(-60, 60, 10_000 ether, 0), ZERO_BYTES);
 
-        modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-600, 600, 10_000 ether, 0), ZERO_BYTES
-        );
+        modifyLiquidityRouter.modifyLiquidity(key, ModifyLiquidityParams(-600, 600, 10_000 ether, 0), ZERO_BYTES);
 
         // swap to create fees, crossing a tick
         uint256 swapAmount = 100 ether;
@@ -412,13 +391,9 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
 
     function test_getFeeGrowthInside() public {
         // create liquidity
-        modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-60, 60, 10_000 ether, 0), ZERO_BYTES
-        );
+        modifyLiquidityRouter.modifyLiquidity(key, ModifyLiquidityParams(-60, 60, 10_000 ether, 0), ZERO_BYTES);
 
-        modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-600, 600, 10_000 ether, 0), ZERO_BYTES
-        );
+        modifyLiquidityRouter.modifyLiquidity(key, ModifyLiquidityParams(-600, 600, 10_000 ether, 0), ZERO_BYTES);
 
         // swap to create fees, crossing a tick
         uint256 swapAmount = 100 ether;
@@ -432,7 +407,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
         vm.snapshotGasLastCall("extsload getFeeGrowthInside");
 
         // poke the LP so that fees are updated
-        modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-60, 60, 0, 0), ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity(key, ModifyLiquidityParams(-60, 60, 0, 0), ZERO_BYTES);
 
         bytes32 positionId =
             keccak256(abi.encodePacked(address(modifyLiquidityRouter), int24(-60), int24(60), bytes32(0)));
@@ -445,16 +420,16 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
         assertEq(feeGrowthInside1X128, feeGrowthInside1X128_);
     }
 
-    function test_fuzz_getFeeGrowthInside(IPoolManager.ModifyLiquidityParams memory params, bool zeroForOne) public {
+    function test_fuzz_getFeeGrowthInside(ModifyLiquidityParams memory params, bool zeroForOne) public {
         modifyLiquidityRouter.modifyLiquidity(
             key,
-            IPoolManager.ModifyLiquidityParams(
+            ModifyLiquidityParams(
                 TickMath.minUsableTick(key.tickSpacing), TickMath.maxUsableTick(key.tickSpacing), 10_000 ether, 0
             ),
             ZERO_BYTES
         );
 
-        (IPoolManager.ModifyLiquidityParams memory _params,) =
+        (ModifyLiquidityParams memory _params,) =
             createFuzzyLiquidity(modifyLiquidityRouter, key, params, SQRT_PRICE_1_1, ZERO_BYTES);
 
         swap(key, zeroForOne, -int256(100e18), ZERO_BYTES);
@@ -465,7 +440,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
 
         // poke the LP so that fees are updated
         modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(_params.tickLower, _params.tickUpper, 0, 0), ZERO_BYTES
+            key, ModifyLiquidityParams(_params.tickLower, _params.tickUpper, 0, 0), ZERO_BYTES
         );
         bytes32 positionId = keccak256(
             abi.encodePacked(address(modifyLiquidityRouter), _params.tickLower, _params.tickUpper, bytes32(0))
@@ -480,9 +455,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
 
     function test_getPositionLiquidity() public {
         // create liquidity
-        modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-60, 60, 10_000 ether, 0), ZERO_BYTES
-        );
+        modifyLiquidityRouter.modifyLiquidity(key, ModifyLiquidityParams(-60, 60, 10_000 ether, 0), ZERO_BYTES);
 
         bytes32 positionId =
             keccak256(abi.encodePacked(address(modifyLiquidityRouter), int24(-60), int24(60), bytes32(0)));
@@ -493,15 +466,12 @@ contract StateLibraryTest is Test, Deployers, Fuzzers {
         assertEq(liquidity, 10_000 ether);
     }
 
-    function test_fuzz_getPositionLiquidity(
-        IPoolManager.ModifyLiquidityParams memory paramsA,
-        IPoolManager.ModifyLiquidityParams memory paramsB
-    ) public {
-        (IPoolManager.ModifyLiquidityParams memory _paramsA) =
-            Fuzzers.createFuzzyLiquidityParams(key, paramsA, SQRT_PRICE_1_1);
+    function test_fuzz_getPositionLiquidity(ModifyLiquidityParams memory paramsA, ModifyLiquidityParams memory paramsB)
+        public
+    {
+        (ModifyLiquidityParams memory _paramsA) = Fuzzers.createFuzzyLiquidityParams(key, paramsA, SQRT_PRICE_1_1);
 
-        (IPoolManager.ModifyLiquidityParams memory _paramsB) =
-            Fuzzers.createFuzzyLiquidityParams(key, paramsB, SQRT_PRICE_1_1);
+        (ModifyLiquidityParams memory _paramsB) = Fuzzers.createFuzzyLiquidityParams(key, paramsB, SQRT_PRICE_1_1);
 
         // Assume there are no overlapping positions
         vm.assume(
