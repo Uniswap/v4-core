@@ -219,7 +219,7 @@ library StateLibrary {
      * @notice Retrieves the position information of a pool without needing to calculate the `positionId`.
      * @dev Corresponds to pools[poolId].positions[positionId]
      * @param poolId The ID of the pool.
-     * @param owner The owner of the liquidity position.
+     * @param posm The position manager.
      * @param tickLower The lower tick of the liquidity range.
      * @param tickUpper The upper tick of the liquidity range.
      * @param salt The bytes32 randomness to further distinguish position state.
@@ -230,13 +230,13 @@ library StateLibrary {
     function getPositionInfo(
         IPoolManager manager,
         PoolId poolId,
-        address owner,
+        address posm,
         int24 tickLower,
         int24 tickUpper,
         bytes32 salt
     ) internal view returns (uint128 liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128) {
-        // positionKey = keccak256(abi.encodePacked(owner, tickLower, tickUpper, salt))
-        bytes32 positionKey = Position.calculatePositionKey(owner, tickLower, tickUpper, salt);
+        // positionKey = keccak256(abi.encodePacked(posm, tickLower, tickUpper, salt))
+        bytes32 positionKey = Position.calculatePositionKey(posm, tickLower, tickUpper, salt);
 
         (liquidity, feeGrowthInside0LastX128, feeGrowthInside1LastX128) = getPositionInfo(manager, poolId, positionKey);
     }
