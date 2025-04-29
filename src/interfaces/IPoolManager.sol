@@ -10,6 +10,7 @@ import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {IExtsload} from "./IExtsload.sol";
 import {IExttload} from "./IExttload.sol";
+import {ModifyLiquidityParams, SwapParams} from "../types/PoolOperation.sol";
 
 /// @notice Interface for the PoolManager
 interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
@@ -119,16 +120,6 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @return tick The initial tick of the pool
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick);
 
-    struct ModifyLiquidityParams {
-        // the lower and upper tick of the position
-        int24 tickLower;
-        int24 tickUpper;
-        // how to modify the liquidity
-        int256 liquidityDelta;
-        // a value to set if you want unique liquidity positions at the same range
-        bytes32 salt;
-    }
-
     /// @notice Modify the liquidity for the given pool
     /// @dev Poke by calling with a zero liquidityDelta
     /// @param key The pool to modify liquidity in
@@ -142,15 +133,6 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
         external
         returns (BalanceDelta callerDelta, BalanceDelta feesAccrued);
-
-    struct SwapParams {
-        /// Whether to swap token0 for token1 or vice versa
-        bool zeroForOne;
-        /// The desired input amount if negative (exactIn), or the desired output amount if positive (exactOut)
-        int256 amountSpecified;
-        /// The sqrt price at which, if reached, the swap will stop executing
-        uint160 sqrtPriceLimitX96;
-    }
 
     /// @notice Swap against the given pool
     /// @param key The pool to swap in

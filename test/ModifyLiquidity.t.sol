@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import {Test} from "forge-std/Test.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {PoolKey} from "src/types/PoolKey.sol";
+import {ModifyLiquidityParams} from "src/types/PoolOperation.sol";
 import {IPoolManager} from "src/interfaces/IPoolManager.sol";
 import {IHooks} from "src/interfaces/IHooks.sol";
 import {Position} from "src/libraries/Position.sol";
@@ -30,11 +31,11 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers 
 
     int128 constant ONE_PIP = 1e6;
 
-    IPoolManager.ModifyLiquidityParams public LIQ_PARAM_NO_SALT =
-        IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18, salt: 0});
+    ModifyLiquidityParams public LIQ_PARAM_NO_SALT =
+        ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18, salt: 0});
 
-    IPoolManager.ModifyLiquidityParams public LIQ_PARAM_SALT =
-        IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18, salt: SALT});
+    ModifyLiquidityParams public LIQ_PARAM_SALT =
+        ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18, salt: SALT});
 
     function setUp() public {
         deployFreshManagerAndRouters();
@@ -50,13 +51,12 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers 
     /// forge-config: pr.fuzz.runs = 10
     /// forge-config: ci.fuzz.runs = 500
     /// forge-config: debug.fuzz.runs = 10
-    function test_ffi_fuzz_addLiquidity_defaultPool_ReturnsCorrectLiquidityDelta(
-        IPoolManager.ModifyLiquidityParams memory paramSeed
-    ) public {
+    function test_ffi_fuzz_addLiquidity_defaultPool_ReturnsCorrectLiquidityDelta(ModifyLiquidityParams memory paramSeed)
+        public
+    {
         // Sanitize the fuzzed params to get valid tickLower, tickUpper, and liquidityDelta.
         // We use SQRT_PRICE_1_1 because the simpleKey pool has initial sqrtPrice of SQRT_PRICE_1_1.
-        IPoolManager.ModifyLiquidityParams memory params =
-            createFuzzyLiquidityParams(simpleKey, paramSeed, SQRT_PRICE_1_1);
+        ModifyLiquidityParams memory params = createFuzzyLiquidityParams(simpleKey, paramSeed, SQRT_PRICE_1_1);
 
         logParams(params);
 
@@ -77,7 +77,7 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers 
         // Set the params to add random amount of liquidity to random tick boundary.
         int24 tickUpper = TickMath.MAX_TICK_SPACING * 4;
         int24 tickLower = TickMath.MAX_TICK_SPACING * -9;
-        IPoolManager.ModifyLiquidityParams memory params = IPoolManager.ModifyLiquidityParams({
+        ModifyLiquidityParams memory params = ModifyLiquidityParams({
             tickLower: tickLower,
             tickUpper: tickUpper,
             liquidityDelta: 16787899214600939458,
@@ -101,7 +101,7 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers 
         // Set the params to add random amount of liquidity to random tick boundary.
         int24 tickUpper = TickMath.MIN_TICK_SPACING * 17;
         int24 tickLower = TickMath.MIN_TICK_SPACING * 9;
-        IPoolManager.ModifyLiquidityParams memory params = IPoolManager.ModifyLiquidityParams({
+        ModifyLiquidityParams memory params = ModifyLiquidityParams({
             tickLower: tickLower,
             tickUpper: tickUpper,
             liquidityDelta: 922871614499955267459963,
@@ -118,10 +118,7 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers 
         _checkError(delta.amount1(), jsDelta1, "amount1 is off by more than one pip");
     }
 
-    function _modifyLiquidityJS(PoolId poolId, IPoolManager.ModifyLiquidityParams memory params)
-        public
-        returns (int128, int128)
-    {
+    function _modifyLiquidityJS(PoolId poolId, ModifyLiquidityParams memory params) public returns (int128, int128) {
         (uint256 price, int24 tick,,) = manager.getSlot0(poolId);
 
         string memory jsParameters = string(
@@ -257,8 +254,8 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers 
         MockERC20(Currency.unwrap(currency0)).approve(address(modifyLiquidityRouter2), Constants.MAX_UINT256);
         MockERC20(Currency.unwrap(currency1)).approve(address(modifyLiquidityRouter2), Constants.MAX_UINT256);
 
-        IPoolManager.ModifyLiquidityParams memory LIQ_PARAM_SALT_2 =
-            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 2e18, salt: SALT});
+        ModifyLiquidityParams memory LIQ_PARAM_SALT_2 =
+            ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 2e18, salt: SALT});
 
         // Get the uninitialized positions and assert they have no liquidity.
         (uint128 liquiditySalt,,) = manager.getPositionInfo(

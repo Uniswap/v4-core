@@ -11,6 +11,7 @@ import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {IUnlockCallback} from "../src/interfaces/callback/IUnlockCallback.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
+import {ModifyLiquidityParams} from "../src/types/PoolOperation.sol";
 import {ActionsRouter, Actions} from "../src/test/ActionsRouter.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {CurrencyReserves} from "../src/libraries/CurrencyReserves.sol";
@@ -111,7 +112,7 @@ contract SyncTest is Test, Deployers {
 
         manager.initialize(key2, SQRT_PRICE_1_1);
 
-        modifyLiquidityRouter.modifyLiquidity(key2, IPoolManager.ModifyLiquidityParams(-60, 60, 100, 0), new bytes(0));
+        modifyLiquidityRouter.modifyLiquidity(key2, ModifyLiquidityParams(-60, 60, 100, 0), new bytes(0));
         (uint256 balanceCurrency2) = currency2.balanceOf(address(manager));
 
         Actions[] memory actions = new Actions[](2);

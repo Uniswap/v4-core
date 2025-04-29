@@ -5,6 +5,7 @@ import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
+import {SwapParams} from "../types/PoolOperation.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
@@ -22,7 +23,7 @@ contract PoolSwapTest is PoolTestBase {
         address sender;
         TestSettings testSettings;
         PoolKey key;
-        IPoolManager.SwapParams params;
+        SwapParams params;
         bytes hookData;
     }
 
@@ -31,12 +32,11 @@ contract PoolSwapTest is PoolTestBase {
         bool settleUsingBurn;
     }
 
-    function swap(
-        PoolKey memory key,
-        IPoolManager.SwapParams memory params,
-        TestSettings memory testSettings,
-        bytes memory hookData
-    ) external payable returns (BalanceDelta delta) {
+    function swap(PoolKey memory key, SwapParams memory params, TestSettings memory testSettings, bytes memory hookData)
+        external
+        payable
+        returns (BalanceDelta delta)
+    {
         delta = abi.decode(
             manager.unlock(abi.encode(CallbackData(msg.sender, testSettings, key, params, hookData))), (BalanceDelta)
         );
