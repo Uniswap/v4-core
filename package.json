@@ -1,6 +1,6 @@
 {
   "name": "@uniswap/v4-core",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "🦄 Core smart contracts of Uniswap v4",
   "repository": {
     "type": "git",
