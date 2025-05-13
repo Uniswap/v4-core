@@ -22,6 +22,10 @@ jobs:
         with:
           version: stable
 
+      - name: Show Forge version
+        run: |
+          forge --version
+
       - name: Build
         run: forge build
         env:
