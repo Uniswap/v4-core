@@ -8,20 +8,9 @@ import {IUniswapV3MintCallback, IUniswapV3Pool, IUniswapV3SwapCallback, V3Helper
 import {BalanceDelta, BalanceDeltaLibrary, toBalanceDelta} from "../src/types/BalanceDelta.sol";
 import {Currency} from "../src/types/Currency.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
+import {ModifyLiquidityParams, SwapParams} from "../src/types/PoolOperation.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
-<<<<<<< HEAD
-<<<<<<< HEAD
-import {BalanceDelta, BalanceDeltaLibrary, toBalanceDelta} from "../src/types/BalanceDelta.sol";
-import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
-import {PoolKey} from "../src/types/PoolKey.sol";
-import {ModifyLiquidityParams, SwapParams} from "../src/types/PoolOperation.sol";
-import {SqrtPriceMath} from "../src/libraries/SqrtPriceMath.sol";
-=======
->>>>>>> 4d3ef8c3 (refactor: reorder and deduplicate test imports)
-import {TickMath} from "../src/libraries/TickMath.sol";
-=======
->>>>>>> 08660e5f (refactor: reorder imports alphabetically)
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {SqrtPriceMath} from "../src/libraries/SqrtPriceMath.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";

@@ -2,11 +2,13 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
+import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {AmountHelpers} from "./utils/AmountHelpers.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
+import {ModifyLiquidityParams, SwapParams} from "../src/types/PoolOperation.sol";
 import {PoolId} from "../src/types/PoolId.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
@@ -25,20 +27,6 @@ import {TransientStateLibrary} from "../src/libraries/TransientStateLibrary.sol"
 import {PoolManager} from "../src/PoolManager.sol";
 import {Action} from "../src/test/PoolNestedActionsTest.sol";
 import {Actions} from "../src/test/ActionsRouter.sol";
-<<<<<<< HEAD
-import {MockHooks} from "../src/test/MockHooks.sol";
-import {MockContract} from "../src/test/MockContract.sol";
-<<<<<<< HEAD
-import {EmptyTestHooks} from "../src/test/EmptyTestHooks.sol";
-import {PoolKey} from "../src/types/PoolKey.sol";
-import {ModifyLiquidityParams, SwapParams} from "../src/types/PoolOperation.sol";
-import {PoolModifyLiquidityTest} from "../src/test/PoolModifyLiquidityTest.sol";
-import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
-=======
->>>>>>> 4d3ef8c3 (refactor: reorder and deduplicate test imports)
-import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
-=======
->>>>>>> 08660e5f (refactor: reorder imports alphabetically)
 import {EmptyTestHooks} from "../src/test/EmptyTestHooks.sol";
 import {MockContract} from "../src/test/MockContract.sol";
 import {MockHooks} from "../src/test/MockHooks.sol";

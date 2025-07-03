@@ -6,30 +6,16 @@ import {Deployers} from "./utils/Deployers.sol";
 import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {Currency} from "../src/types/Currency.sol";
 import {PoolId} from "../src/types/PoolId.sol";
+import {SwapParams} from "../src/types/PoolOperation.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {CustomCurveHook} from "../src/test/CustomCurveHook.sol";
 import {DeltaReturningHook} from "../src/test/DeltaReturningHook.sol";
-<<<<<<< HEAD
-<<<<<<< HEAD
-import {IHooks} from "../src/interfaces/IHooks.sol";
-import {Hooks} from "../src/libraries/Hooks.sol";
-import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
-import {PoolId} from "../src/types/PoolId.sol";
-import {SwapParams} from "../src/types/PoolOperation.sol";
-import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
-import {Currency} from "../src/types/Currency.sol";
-import {BalanceDelta} from "../src/types/BalanceDelta.sol";
-import {SafeCast} from "../src/libraries/SafeCast.sol";
-=======
->>>>>>> 4d3ef8c3 (refactor: reorder and deduplicate test imports)
-=======
 import {FeeTakingHook} from "../src/test/FeeTakingHook.sol";
 import {LPFeeTakingHook} from "../src/test/LPFeeTakingHook.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
->>>>>>> 08660e5f (refactor: reorder imports alphabetically)
 
 contract CustomAccountingTest is Test, Deployers {
     using SafeCast for *;

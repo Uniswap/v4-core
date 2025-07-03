@@ -3,8 +3,8 @@ pragma solidity ^0.8.15;
 
 import {Test} from "forge-std/Test.sol";
 import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
-import {Constants} from "../test/utils/Constants.sol";
-import {Deployers} from "../test/utils/Deployers.sol";
+import {Constants} from "./utils/Constants.sol";
+import {Deployers} from "./utils/Deployers.sol";
 import {Currency} from "../src/types/Currency.sol";
 import {PoolId} from "../src/types/PoolId.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
