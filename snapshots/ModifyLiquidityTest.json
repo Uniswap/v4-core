@@ -1,4 +1,11 @@
 {
-  "add liquidity to already existing position with salt": "144401",
-  "create new liquidity to a position with salt": "292593"
+  // --- Gas Cost Analysis ---
+  
+  // Cost for modifying an already existing NFT/tick range.
+  // This is a "hot" state modification (SSTORE), hence lower cost.
+  "addLiquidityToExistingPositionWithSalt": 144401,
+
+  // Cost for creating a brand new NFT/tick range and initializing the liquidity.
+  // This requires a "cold" state write (SSTORE) and initial setup, hence significantly higher cost.
+  "createNewLiquidityToPositionWithSalt": 292593
 }
