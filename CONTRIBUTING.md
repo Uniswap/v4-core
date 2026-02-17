@@ -29,7 +29,7 @@ Pull requests can be reviewed by community members, but to be merged they will n
 Finally, before opening a pull request please do the following:
 
 - Check that the code style follows the [standards](#standards).
-- Run the tests and snapshots. Commands are outlined in the [tests](#tests) section.
+- Run the tests and snapshots. Commands are outlined in the [Setup](#setup) section.
 - Document any new functions, structs, or interfaces following the natspec standard.
 - Add tests! For smaller contributions, they should be tested with unit tests, and fuzz tests where possible. For bigger contributions, they should be tested with integration tests and invariant tests where possible.
 - Make sure all commits are [signed](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification)
