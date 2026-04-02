@@ -3,7 +3,8 @@ pragma solidity ^0.8.24;
 
 /// @notice This is a temporary library that allows us to use transient storage (tstore/tload)
 /// for the nonzero delta count.
-/// TODO: This library can be deleted when we have the transient keyword support in solidity.
+/// @dev TODO: This library can be deleted when the `transient` keyword is fully supported and stabilized in Solidity.
+/// Currently, assembly is used to access the `tstore` and `tload` opcodes directly for gas efficiency and availability.
 library NonzeroDeltaCount {
     // The slot holding the number of nonzero deltas. bytes32(uint256(keccak256("NonzeroDeltaCount")) - 1)
     bytes32 internal constant NONZERO_DELTA_COUNT_SLOT =

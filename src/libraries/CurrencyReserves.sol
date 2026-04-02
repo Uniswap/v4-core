@@ -7,9 +7,11 @@ import {CustomRevert} from "./CustomRevert.sol";
 library CurrencyReserves {
     using CustomRevert for bytes4;
 
-    /// bytes32(uint256(keccak256("ReservesOf")) - 1)
+    /// @dev The slot holding the reserves of the synced currency.
+    /// Calculated as `bytes32(uint256(keccak256("ReservesOf")) - 1)` to effectively namespace the slot and avoid collisions.
     bytes32 constant RESERVES_OF_SLOT = 0x1e0745a7db1623981f0b2a5d4232364c00787266eb75ad546f190e6cebe9bd95;
-    /// bytes32(uint256(keccak256("Currency")) - 1)
+    /// @dev The slot holding the currently synced currency.
+    /// Calculated as `bytes32(uint256(keccak256("Currency")) - 1)` to effectively namespace the slot and avoid collisions.
     bytes32 constant CURRENCY_SLOT = 0x27e098c505d44ec3574004bca052aabf76bd35004c182099d8c575fb238593b9;
 
     function getSyncedCurrency() internal view returns (Currency currency) {

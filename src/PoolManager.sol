@@ -114,6 +114,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
+    /// @dev Events are emitted before the afterInitialize hook to ensure event ordering.
+    /// @dev This function initializes the pool state and parameters.
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external noDelegateCall returns (int24 tick) {
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) TickSpacingTooLarge.selector.revertWith(key.tickSpacing);
@@ -142,6 +144,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
+    /// @dev Events are emitted before the afterModifyLiquidity hook to ensure event ordering.
+    /// @dev Reverts if the pool is locked.
     function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
         external
         onlyWhenUnlocked
@@ -184,6 +188,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
+    /// @dev Events are emitted before the afterSwap hook to ensure event ordering.
+    /// @dev Reverts if the pool is locked.
     function swap(PoolKey memory key, SwapParams memory params, bytes calldata hookData)
         external
         onlyWhenUnlocked
@@ -253,6 +259,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
+    /// @dev Events are emitted before the afterDonate hook to ensure event ordering.
+    /// @dev Reverts if the pool is locked.
     function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
         external
         onlyWhenUnlocked
