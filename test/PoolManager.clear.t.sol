@@ -2,12 +2,12 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
-import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
-import {Deployers} from "./utils/Deployers.sol";
-import {Actions} from "../src/test/ActionsRouter.sol";
-import {IHooks} from "../src/interfaces/IHooks.sol";
 import {MockERC20} from "forge-std/mocks/MockERC20.sol";
+import {Deployers} from "./utils/Deployers.sol";
 import {Currency} from "../src/types/Currency.sol";
+import {IHooks} from "../src/interfaces/IHooks.sol";
+import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
+import {Actions} from "../src/test/ActionsRouter.sol";
 
 contract ClearTest is Test, Deployers {
     function setUp() public {
