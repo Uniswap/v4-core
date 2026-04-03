@@ -174,7 +174,7 @@ library StateLibrary {
     }
 
     /**
-     * @notice Retrieves total the liquidity of a pool.
+     * @notice Retrieves the active (in-range) liquidity of the pool at the current tick.
      * @dev Corresponds to pools[poolId].liquidity
      * @param manager The pool manager contract.
      * @param poolId The ID of the pool.
