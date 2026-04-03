@@ -1,0 +1,24 @@
+diff --git a/src/libraries/Position.sol b/src/libraries/Position.sol
+index 40821ae3..4e95adae 100644
+--- a/src/libraries/Position.sol
++++ b/src/libraries/Position.sol
+@@ -50,8 +50,8 @@ library Position {
+         pure
+         returns (bytes32 positionKey)
+     {
+-        // positionKey = keccak256(abi.encodePacked(owner, tickLower, tickUpper, salt))
+-        assembly ("memory-safe") {
++        positionKey = keccak256(abi.encodePacked(owner, tickLower, tickUpper, salt));
++        /*assembly ("memory-safe") {
+             let fmp := mload(0x40)
+             mstore(add(fmp, 0x26), salt) // [0x26, 0x46)
+             mstore(add(fmp, 0x06), tickUpper) // [0x23, 0x26)
+@@ -63,7 +63,7 @@ library Position {
+             mstore(add(fmp, 0x40), 0) // fmp+0x40 held salt
+             mstore(add(fmp, 0x20), 0) // fmp+0x20 held tickLower, tickUpper, salt
+             mstore(fmp, 0) // fmp held owner
+-        }
++        }*/
+     }
+ 
+     /// @notice Credits accumulated fees to a user's position

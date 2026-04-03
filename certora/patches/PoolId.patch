@@ -1,0 +1,17 @@
+diff --git a/src/types/PoolId.sol b/src/types/PoolId.sol
+index 22a0b4f9..8b70c40b 100644
+--- a/src/types/PoolId.sol
++++ b/src/types/PoolId.sol
+@@ -9,9 +9,10 @@ type PoolId is bytes32;
+ library PoolIdLibrary {
+     /// @notice Returns value equal to keccak256(abi.encode(poolKey))
+     function toId(PoolKey memory poolKey) internal pure returns (PoolId poolId) {
+-        assembly ("memory-safe") {
++        /*assembly ("memory-safe") {
+             // 0xa0 represents the total size of the poolKey struct (5 slots of 32 bytes)
+             poolId := keccak256(poolKey, 0xa0)
+-        }
++        }*/
++        poolId = PoolId.wrap(keccak256(abi.encode(poolKey)));
+     }
+ }
