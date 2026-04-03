@@ -23,6 +23,9 @@ abstract contract ERC6909 is IERC6909Claims {
     //////////////////////////////////////////////////////////////*/
 
     function transfer(address receiver, uint256 id, uint256 amount) public virtual returns (bool) {
+        // Security fix: Validate receiver is not zero address
+        require(receiver != address(0), "ERC6909: transfer to zero address");
+        
         balanceOf[msg.sender][id] -= amount;
 
         balanceOf[receiver][id] += amount;
@@ -33,6 +36,9 @@ abstract contract ERC6909 is IERC6909Claims {
     }
 
     function transferFrom(address sender, address receiver, uint256 id, uint256 amount) public virtual returns (bool) {
+        // Security fix: Validate receiver is not zero address
+        require(receiver != address(0), "ERC6909: transfer to zero address");
+        
         if (msg.sender != sender && !isOperator[sender][msg.sender]) {
             uint256 allowed = allowance[sender][msg.sender][id];
             if (allowed != type(uint256).max) allowance[sender][msg.sender][id] = allowed - amount;
