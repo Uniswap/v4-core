@@ -2,23 +2,18 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {Vm} from "forge-std/Vm.sol";
 import {PoolId} from "../src/types/PoolId.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
 import {LPFeeLibrary} from "../src/libraries/LPFeeLibrary.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
-import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
 import {SwapParams} from "../src/types/PoolOperation.sol";
-import {PoolManager} from "../src/PoolManager.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {DynamicFeesTestHook} from "../src/test/DynamicFeesTestHook.sol";
-import {Currency} from "../src/types/Currency.sol";
-import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {Pool} from "../src/libraries/Pool.sol";
-import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
+import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 import {CustomRevert} from "../src/libraries/CustomRevert.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";

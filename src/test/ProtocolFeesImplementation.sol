@@ -6,7 +6,6 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {Currency} from "../types/Currency.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {Pool} from "../libraries/Pool.sol";
-import {Slot0} from "../types/Slot0.sol";
 
 contract ProtocolFeesImplementation is ProtocolFees {
     mapping(PoolId id => Pool.State) internal _pools;

@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {PoolKey} from "../types/PoolKey.sol";
-import {BalanceDelta} from "../types/BalanceDelta.sol";
-
 /// @notice Parameter struct for `ModifyLiquidity` pool operations
 struct ModifyLiquidityParams {
     // the lower and upper tick of the position

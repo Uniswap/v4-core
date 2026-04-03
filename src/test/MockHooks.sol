@@ -3,7 +3,6 @@ pragma solidity ^0.8.24;
 
 import {Hooks} from "../libraries/Hooks.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
-import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {ModifyLiquidityParams, SwapParams} from "../types/PoolOperation.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
