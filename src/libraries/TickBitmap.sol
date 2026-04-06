@@ -75,11 +75,11 @@ library TickBitmap {
     }
 
     /// @notice Returns the next initialized tick contained in the same word (or adjacent word) as the tick that is either
-    /// to the left (less than or equal to) or right (greater than) of the given tick
+    /// to the right (less than or equal to) or left (greater than) of the given tick
     /// @param self The mapping in which to compute the next initialized tick
     /// @param tick The starting tick
     /// @param tickSpacing The spacing between usable ticks
-    /// @param lte Whether to search for the next initialized tick to the left (less than or equal to the starting tick)
+    /// @param lte Whether to search for the next initialized tick to the right (less than or equal to the starting tick)
     /// @return next The next initialized or uninitialized tick up to 256 ticks away from the current tick
     /// @return initialized Whether the next tick is initialized, as the function only searches within up to 256 ticks
     function nextInitializedTickWithinOneWord(
