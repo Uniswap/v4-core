@@ -818,6 +818,99 @@ contract PoolManagerTest is Test, Deployers {
         assertEq(manager.protocolFeesAccrued(currency1), expectedProtocolFee);
     }
 
+    function test_swap_toLiquidity_fromMinPrice() public {
+        PoolKey memory _key = PoolKey(currency0, currency1, 500, 10, IHooks(address(0)));
+        manager.initialize(_key, TickMath.MIN_SQRT_PRICE);
+
+        IPoolManager.ModifyLiquidityParams memory params =
+            IPoolManager.ModifyLiquidityParams({tickLower: -10, tickUpper: 10, liquidityDelta: 100e18, salt: 0});
+        modifyLiquidityRouter.modifyLiquidity(_key, params, ZERO_BYTES);
+
+        // zeroForOne=false to swap higher
+        IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams(false, -1, TickMath.MAX_SQRT_PRICE - 1);
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
+
+        (uint160 sqrtPriceX96,,,) = manager.getSlot0(_key.toId());
+
+        swapRouter.swap(_key, swapParams, testSettings, ZERO_BYTES);
+
+        (sqrtPriceX96,,,) = manager.getSlot0(_key.toId());
+
+        // The swap pushes the price to the start of liquidity.
+        assertEq(sqrtPriceX96, TickMath.getSqrtPriceAtTick(-10));
+    }
+
+    function test_fuzz_swap_toLiquidity(uint160 sqrtPriceX96) public {
+        PoolKey memory _key = PoolKey(currency0, currency1, 500, 10, IHooks(address(0)));
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
+        vm.assume(sqrtPriceX96 != 0);
+        manager.initialize(_key, sqrtPriceX96);
+
+        int24 tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
+
+        bool zeroForOne;
+        uint160 sqrtPriceX96Limit;
+        int24 tickBoundary;
+        if (tick <= -10) {
+            // zeroForOne=false to swap higher
+            zeroForOne = false;
+            sqrtPriceX96Limit = TickMath.MAX_SQRT_PRICE - 1;
+            tickBoundary = -10;
+        } else if (tick > 10) {
+            // zeroForOne=true to swap lower
+            zeroForOne = true;
+            sqrtPriceX96Limit = TickMath.MIN_SQRT_PRICE + 1;
+            tickBoundary = 9;
+        } else {
+            // the price is between the position, so let's just swap down
+            zeroForOne = true;
+            sqrtPriceX96Limit = TickMath.MIN_SQRT_PRICE + 1;
+            // the tick will just stay the same, we're only swapping 1 wei
+            tickBoundary = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
+        }
+
+        // deeeeeep liquidity so that swapping 1 wei doesn't change the price too much if the price is within the tick range
+        IPoolManager.ModifyLiquidityParams memory params = IPoolManager.ModifyLiquidityParams({
+            tickLower: -10,
+            tickUpper: 10,
+            liquidityDelta: 100000000000e18,
+            salt: 0
+        });
+
+        modifyLiquidityRouter.modifyLiquidity(_key, params, ZERO_BYTES);
+
+        IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams(zeroForOne, 1, sqrtPriceX96Limit);
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
+
+        swapRouter.swap(_key, swapParams, testSettings, ZERO_BYTES);
+
+        int24 _tick;
+        (sqrtPriceX96, _tick,,) = manager.getSlot0(_key.toId());
+
+        // The swap pushes the price to one of the tick boundaries.
+        assertEq(TickMath.getTickAtSqrtPrice(sqrtPriceX96), tickBoundary);
+    }
+
+    function test_swap_toPrice_fromMaxPrice_withoutLiquidity() public {
+        PoolKey memory _key = PoolKey(currency0, currency1, 500, 10, IHooks(address(0)));
+        manager.initialize(_key, TickMath.MAX_SQRT_PRICE - 1);
+
+        // zeroForOne=true to swap lower
+        IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams(true, -1, SQRT_PRICE_1_4);
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
+
+        (uint160 sqrtPriceX96,,,) = manager.getSlot0(_key.toId());
+        swapRouter.swap(_key, swapParams, testSettings, ZERO_BYTES);
+
+        (sqrtPriceX96,,,) = manager.getSlot0(_key.toId());
+
+        // The swap pushes the price to the sqrtPriceLimit.
+        assertEq(SQRT_PRICE_1_4, sqrtPriceX96);
+    }
+
     function test_donate_failsIfNotInitialized() public {
         vm.expectRevert(Pool.PoolNotInitialized.selector);
         donateRouter.donate(uninitializedKey, 100, 100, ZERO_BYTES);
