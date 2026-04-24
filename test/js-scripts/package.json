@@ -1,5 +1,6 @@
 {
   "name": "v4-js-scripts",
+  "private": true,
   "description": "Scripts for v4 tests",
   "license": "MIT",
   "publishConfig": {
