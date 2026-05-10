@@ -256,7 +256,7 @@ library Pool {
         bool initialized;
         // sqrt(price) for the next tick (1/0)
         uint160 sqrtPriceNextX96;
-        // how much is being swapped in in this step
+        // how much is being swapped in this step
         uint256 amountIn;
         // how much is being swapped out
         uint256 amountOut;
