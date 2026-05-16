@@ -65,7 +65,7 @@ interface IHooks {
     /// @param sender The initial msg.sender for the remove liquidity call
     /// @param key The key for the pool
     /// @param params The parameters for removing liquidity
-    /// @param hookData Arbitrary data handed into the PoolManager by the liquidity provider to be be passed on to the hook
+    /// @param hookData Arbitrary data handed into the PoolManager by the liquidity provider to be passed on to the hook
     /// @return bytes4 The function selector for the hook
     function beforeRemoveLiquidity(
         address sender,
@@ -80,7 +80,7 @@ interface IHooks {
     /// @param params The parameters for removing liquidity
     /// @param delta The caller's balance delta after removing liquidity; the sum of principal delta, fees accrued, and hook delta
     /// @param feesAccrued The fees accrued since the last time fees were collected from this position
-    /// @param hookData Arbitrary data handed into the PoolManager by the liquidity provider to be be passed on to the hook
+    /// @param hookData Arbitrary data handed into the PoolManager by the liquidity provider to be passed on to the hook
     /// @return bytes4 The function selector for the hook
     /// @return BalanceDelta The hook's delta in token0 and token1. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
     function afterRemoveLiquidity(
@@ -96,7 +96,7 @@ interface IHooks {
     /// @param sender The initial msg.sender for the swap call
     /// @param key The key for the pool
     /// @param params The parameters for the swap
-    /// @param hookData Arbitrary data handed into the PoolManager by the swapper to be be passed on to the hook
+    /// @param hookData Arbitrary data handed into the PoolManager by the swapper to be passed on to the hook
     /// @return bytes4 The function selector for the hook
     /// @return BeforeSwapDelta The hook's delta in specified and unspecified currencies. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
     /// @return uint24 Optionally override the lp fee, only used if three conditions are met: 1. the Pool has a dynamic fee, 2. the value's 2nd highest bit is set (23rd bit, 0x400000), and 3. the value is less than or equal to the maximum fee (1 million)
@@ -109,7 +109,7 @@ interface IHooks {
     /// @param key The key for the pool
     /// @param params The parameters for the swap
     /// @param delta The amount owed to the caller (positive) or owed to the pool (negative)
-    /// @param hookData Arbitrary data handed into the PoolManager by the swapper to be be passed on to the hook
+    /// @param hookData Arbitrary data handed into the PoolManager by the swapper to be passed on to the hook
     /// @return bytes4 The function selector for the hook
     /// @return int128 The hook's delta in unspecified currency. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
     function afterSwap(
@@ -125,7 +125,7 @@ interface IHooks {
     /// @param key The key for the pool
     /// @param amount0 The amount of token0 being donated
     /// @param amount1 The amount of token1 being donated
-    /// @param hookData Arbitrary data handed into the PoolManager by the donor to be be passed on to the hook
+    /// @param hookData Arbitrary data handed into the PoolManager by the donor to be passed on to the hook
     /// @return bytes4 The function selector for the hook
     function beforeDonate(
         address sender,
@@ -140,7 +140,7 @@ interface IHooks {
     /// @param key The key for the pool
     /// @param amount0 The amount of token0 being donated
     /// @param amount1 The amount of token1 being donated
-    /// @param hookData Arbitrary data handed into the PoolManager by the donor to be be passed on to the hook
+    /// @param hookData Arbitrary data handed into the PoolManager by the donor to be passed on to the hook
     /// @return bytes4 The function selector for the hook
     function afterDonate(
         address sender,
