@@ -17,11 +17,12 @@ library CurrencySettler {
     /// @param amount Amount to send
     /// @param burn If true, burn the ERC-6909 token, otherwise ERC20-transfer to the PoolManager
     function settle(Currency currency, IPoolManager manager, address payer, uint256 amount, bool burn) internal {
-        // for native currencies or burns, calling sync is not required
+        // for burns, calling sync is not required
         // short circuit for ERC-6909 burns to support ERC-6909-wrapped native tokens
         if (burn) {
             manager.burn(payer, currency.toId(), amount);
         } else if (currency.isAddressZero()) {
+            manager.sync(currency);
             manager.settle{value: amount}();
         } else {
             manager.sync(currency);
