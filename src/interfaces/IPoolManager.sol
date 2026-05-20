@@ -209,6 +209,13 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// If the upper 12 bytes are not 0, they will be 0-ed out
     function burn(address from, uint256 id, uint256 amount) external;
 
+    /// @notice Burn ERC-6909 tokens and credit the positive delta to a designated recipient
+    /// @param from The address to burn the tokens from
+    /// @param recipient The address to credit the positive delta to. If zero, defaults to msg.sender
+    /// @param id The currency address to burn from ERC6909s, as a uint256
+    /// @param amount The amount of currency to burn
+    function burn(address from, address recipient, uint256 id, uint256 amount) external;
+
     /// @notice Updates the pools lp fees for the a pool that has enabled dynamic lp fees.
     /// @dev A swap fee totaling MAX_SWAP_FEE (100%) makes exact output swaps impossible since the input is entirely consumed by the fee
     /// @param key The key of the pool to update dynamic LP fees for

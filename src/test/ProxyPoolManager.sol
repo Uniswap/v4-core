@@ -179,7 +179,11 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
 
     /// @inheritdoc IPoolManager
     function burn(address from, uint256 id, uint256 amount) external onlyWhenUnlocked noDelegateCall {
-        _delegateCall(_delegateManager, abi.encodeWithSelector(this.burn.selector, from, id, amount));
+        _delegateCall(_delegateManager, abi.encodeWithSignature("burn(address,uint256,uint256)", from, id, amount));
+    }
+
+    function burn(address from, address recipient, uint256 id, uint256 amount) external onlyWhenUnlocked noDelegateCall {
+        _delegateCall(_delegateManager, abi.encodeWithSignature("burn(address,address,uint256,uint256)", from, recipient, id, amount));
     }
 
     /// @inheritdoc IPoolManager
