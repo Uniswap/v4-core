@@ -100,9 +100,10 @@ interface IHooks {
     /// @return bytes4 The function selector for the hook
     /// @return BeforeSwapDelta The hook's delta in specified and unspecified currencies. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
     /// @return uint24 Optionally override the lp fee, only used if three conditions are met: 1. the Pool has a dynamic fee, 2. the value's 2nd highest bit is set (23rd bit, 0x400000), and 3. the value is less than or equal to the maximum fee (1 million)
+    /// @return uint160 Optionally override the sqrtPriceLimitX96. If non-zero, this value will be used as the new sqrtPriceLimitX96 for the swap.
     function beforeSwap(address sender, PoolKey calldata key, SwapParams calldata params, bytes calldata hookData)
         external
-        returns (bytes4, BeforeSwapDelta, uint24);
+        returns (bytes4, BeforeSwapDelta, uint24, uint160);
 
     /// @notice The hook called after a swap
     /// @param sender The initial msg.sender for the swap call
@@ -149,10 +150,4 @@ interface IHooks {
         uint256 amount1,
         bytes calldata hookData
     ) external returns (bytes4);
-
-    /// @notice The hook called when sequencer stress is detected, providing early warning signals.
-    /// @param rttP99 The P99 Round Trip Time in milliseconds, indicating network latency.
-    /// @param revertRatio The revert ratio, scaled by 10,000 (e.g., 61.36% -> 6136), indicating transaction failure rate.
-    /// @return bytes4 The function selector for the hook.
-    function onSequencerStress(uint256 rttP99, uint256 revertRatio) external returns (bytes4);
 }
