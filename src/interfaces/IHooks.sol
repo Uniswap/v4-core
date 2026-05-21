@@ -149,4 +149,10 @@ interface IHooks {
         uint256 amount1,
         bytes calldata hookData
     ) external returns (bytes4);
+
+    /// @notice The hook called when sequencer stress is detected, providing early warning signals.
+    /// @param rttP99 The P99 Round Trip Time in milliseconds, indicating network latency.
+    /// @param revertRatio The revert ratio, scaled by 10,000 (e.g., 61.36% -> 6136), indicating transaction failure rate.
+    /// @return bytes4 The function selector for the hook.
+    function onSequencerStress(uint256 rttP99, uint256 revertRatio) external returns (bytes4);
 }
