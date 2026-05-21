@@ -78,6 +78,17 @@ library CustomRevert {
         }
     }
 
+    /// @dev Reverts with a custom error with two uint256 arguments
+    function revertWith(bytes4 selector, uint256 value1, uint256 value2) internal pure {
+        assembly ("memory-safe") {
+            let fmp := mload(0x40)
+            mstore(fmp, selector)
+            mstore(add(fmp, 0x04), value1)
+            mstore(add(fmp, 0x24), value2)
+            revert(fmp, 0x44)
+        }
+    }
+
     /// @notice bubble up the revert message returned by a call and revert with a wrapped ERC-7751 error
     /// @dev this method can be vulnerable to revert data bombs
     function bubbleUpAndRevertWith(
