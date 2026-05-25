@@ -170,6 +170,22 @@ contract PoolTest is Test {
         }
     }
 
+    function test_swap_exactInputZeroForOneAccruesOnlyToken0Fees() public {
+        _assertSwapFeeGrowthDirection(true, -1 ether);
+    }
+
+    function test_swap_exactOutputZeroForOneAccruesOnlyToken0Fees() public {
+        _assertSwapFeeGrowthDirection(true, 1 ether);
+    }
+
+    function test_swap_exactInputOneForZeroAccruesOnlyToken1Fees() public {
+        _assertSwapFeeGrowthDirection(false, -1 ether);
+    }
+
+    function test_swap_exactOutputOneForZeroAccruesOnlyToken1Fees() public {
+        _assertSwapFeeGrowthDirection(false, 1 ether);
+    }
+
     function test_fuzz_tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) public pure {
         tickSpacing = int24(bound(tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
         // v3 math
@@ -178,5 +194,41 @@ contract PoolTest is Test {
         uint24 numTicks = uint24((maxTick - minTick) / tickSpacing) + 1;
         // assert that the result is the same as the v3 math or lower
         assertGe(type(uint128).max / numTicks, Pool.tickSpacingToMaxLiquidityPerTick(tickSpacing));
+    }
+
+    function _assertSwapFeeGrowthDirection(bool zeroForOne, int256 amountSpecified) internal {
+        _initializeWithLiquidity();
+
+        state.swap(
+            Pool.SwapParams({
+                amountSpecified: amountSpecified,
+                tickSpacing: 60,
+                zeroForOne: zeroForOne,
+                sqrtPriceLimitX96: zeroForOne ? Constants.SQRT_PRICE_1_2 : Constants.SQRT_PRICE_2_1,
+                lpFeeOverride: 0
+            })
+        );
+
+        if (zeroForOne) {
+            assertGt(state.feeGrowthGlobal0X128, 0);
+            assertEq(state.feeGrowthGlobal1X128, 0);
+        } else {
+            assertEq(state.feeGrowthGlobal0X128, 0);
+            assertGt(state.feeGrowthGlobal1X128, 0);
+        }
+    }
+
+    function _initializeWithLiquidity() internal {
+        state.initialize(Constants.SQRT_PRICE_1_1, 3000);
+        state.modifyLiquidity(
+            Pool.ModifyLiquidityParams({
+                owner: address(this),
+                tickLower: -120,
+                tickUpper: 120,
+                liquidityDelta: 10_000 ether,
+                tickSpacing: 60,
+                salt: 0
+            })
+        );
     }
 }
