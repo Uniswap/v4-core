@@ -750,6 +750,40 @@ contract PoolManagerTest is Test, Deployers {
         assertEq(erc6909Balance, 71);
     }
 
+    function test_swap_mintAndBurn6909Claims() public {
+        PoolSwapTest.TestSettings memory mintSettings =
+            PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false});
+
+        vm.expectEmit();
+        emit Transfer(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
+        swapRouter.swap(key, SWAP_PARAMS, mintSettings, ZERO_BYTES);
+
+        uint256 currency1Claims = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
+        assertEq(currency1Claims, 98);
+
+        // give permission for swapRouter to burn the 6909s
+        manager.setOperator(address(swapRouter), true);
+
+        SwapParams memory burnParams =
+            SwapParams({zeroForOne: false, amountSpecified: 25, sqrtPriceLimitX96: SQRT_PRICE_4_1});
+        PoolSwapTest.TestSettings memory burnSettings =
+            PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: true});
+
+        vm.expectEmit();
+        emit Transfer(address(swapRouter), address(this), address(0), CurrencyLibrary.toId(currency1), 27);
+        vm.expectEmit();
+        emit Transfer(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(currency0), 25);
+
+        BalanceDelta delta = swapRouter.swap(key, burnParams, burnSettings, ZERO_BYTES);
+        assertEq(delta.amount0(), int128(25));
+        assertEq(delta.amount1(), int128(-27));
+
+        uint256 currency0Claims = manager.balanceOf(address(this), CurrencyLibrary.toId(currency0));
+        currency1Claims = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
+        assertEq(currency0Claims, 25);
+        assertEq(currency1Claims, 71);
+    }
+
     function test_swap_againstLiquidity_gas() public {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
