@@ -55,3 +55,14 @@ All contributions must follow the below standards. Maintainers will close out PR
 Above all else, please be respectful of the people behind the code. Any kind of aggressive or disrespectful comments, issues, and language will be removed.
 
 Issues and PRs that are obviously spam and unhelpful to the development process or unrelated to the core code will also be closed.
+
+## Gas Optimization Guidelines
+
+When contributing hook implementations or pool logic, keep these patterns in mind:
+
+- Prefer `uint128` over `uint256` for liquidity values when you can guarantee the upper bound
+- Use `unchecked` blocks for arithmetic that cannot realistically overflow (e.g. fee accumulator increments)
+- Avoid `SLOAD` inside loops — cache storage reads in memory at the top of the function
+- Emit events *after* state changes, not before, to avoid unnecessary reverts that still consume gas
+
+These are guidelines, not hard rules. Any trade-off between readability and gas should be noted in the PR description.
