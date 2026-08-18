@@ -77,6 +77,8 @@ abstract contract ERC6909 is IERC6909Claims {
     //////////////////////////////////////////////////////////////*/
 
     function _mint(address receiver, uint256 id, uint256 amount) internal virtual {
+        require(receiver != address(0), "ERC6909: mint to zero address");
+
         balanceOf[receiver][id] += amount;
 
         emit Transfer(msg.sender, address(0), receiver, id, amount);
