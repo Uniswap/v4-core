@@ -387,9 +387,4 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     function _getPool(PoolId id) internal view override returns (Pool.State storage) {
         return _pools[id];
     }
-
-    /// @notice Implementation of the _isUnlocked function defined in ProtocolFees
-    function _isUnlocked() internal view override returns (bool) {
-        return Lock.isUnlocked();
-    }
 }
