@@ -10,7 +10,6 @@ import {DeltaReturningHook} from "../src/test/DeltaReturningHook.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
-import {PoolId} from "../src/types/PoolId.sol";
 import {SwapParams} from "../src/types/PoolOperation.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {Currency} from "../src/types/Currency.sol";

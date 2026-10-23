@@ -2,7 +2,6 @@
 pragma solidity ^0.8.15;
 
 import {Test} from "forge-std/Test.sol";
-import {Currency} from "../src/types/Currency.sol";
 import {MockERC6909Claims} from "../src/test/MockERC6909Claims.sol";
 
 contract ERC6909ClaimsTest is Test {

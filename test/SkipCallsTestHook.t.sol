@@ -2,14 +2,9 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {Vm} from "forge-std/Vm.sol";
-import {PoolId} from "../src/types/PoolId.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
-import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
-import {PoolKey} from "../src/types/PoolKey.sol";
-import {PoolManager} from "../src/PoolManager.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {Currency} from "../src/types/Currency.sol";

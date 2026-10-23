@@ -6,7 +6,6 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {ModifyLiquidityParams, SwapParams} from "../types/PoolOperation.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {BeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
-import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
 contract BaseTestHooks is IHooks {
     error HookNotImplemented();

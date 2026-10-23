@@ -7,15 +7,11 @@ import {Deployers} from "./utils/Deployers.sol";
 import {Currency} from "../src/types/Currency.sol";
 import {Fuzzers} from "../src/test/Fuzzers.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
-import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
-import {BalanceDelta, BalanceDeltaLibrary, toBalanceDelta} from "../src/types/BalanceDelta.sol";
+import {BalanceDelta, toBalanceDelta} from "../src/types/BalanceDelta.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
 import {ModifyLiquidityParams, SwapParams} from "../src/types/PoolOperation.sol";
-import {SqrtPriceMath} from "../src/libraries/SqrtPriceMath.sol";
-import {TickMath} from "../src/libraries/TickMath.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
-import {LiquidityAmounts} from "./utils/LiquidityAmounts.sol";
 
 abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallback, IUniswapV3SwapCallback {
     function setUp() public virtual override {
