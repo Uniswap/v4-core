@@ -16,7 +16,7 @@ jobs:
       - name: Set up node
         uses: actions/setup-node@f1f314fca9dfce2769ece7d933488f076716723e # v1.4.6
         with:
-          node-version: 16
+          node-version: 22.23.4
 
       - name: Set up Python 3.8
         uses: actions/setup-python@e9aba2c848f5ebd159c070c61ea2c4e2b122355e # v2.3.4
