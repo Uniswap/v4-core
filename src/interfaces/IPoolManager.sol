@@ -52,7 +52,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @param id The abi encoded hash of the pool key struct for the new pool
     /// @param currency0 The first currency of the pool by address sort order
     /// @param currency1 The second currency of the pool by address sort order
-    /// @param fee The fee collected upon every swap in the pool, denominated in hundredths of a bip
+    /// @param fee The fee collected upon every swap in the pool, denominated in hundredths of a bip, or DYNAMIC_FEE_FLAG if the fee is dynamically set by the hook
     /// @param tickSpacing The minimum number of ticks between initialized ticks
     /// @param hooks The hooks contract address for the pool, or address(0) if none
     /// @param sqrtPriceX96 The price of the pool on initialization
@@ -108,7 +108,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
 
     /// @notice All interactions on the contract that account deltas require unlocking. A caller that calls `unlock` must implement
     /// `IUnlockCallback(msg.sender).unlockCallback(data)`, where they interact with the remaining functions on this contract.
-    /// @dev The only functions callable without an unlocking are `initialize` and `updateDynamicLPFee`
+    /// @dev The only functions callable without an unlocking are `initialize`, `updateDynamicLPFee` and `sync`
     /// @param data Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
     /// @return The data returned by the call to `IUnlockCallback(msg.sender).unlockCallback(data)`
     function unlock(bytes calldata data) external returns (bytes memory);
