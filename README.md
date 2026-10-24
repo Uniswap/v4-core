@@ -5,11 +5,7 @@
 
 Uniswap v4 is a new automated market maker protocol that provides extensible and customizable pools. `v4-core` hosts the core pool logic for creating pools and executing pool actions like swapping and providing liquidity.
 
-The contracts in this repo are in early stages - we are releasing the draft code now so that v4 can be built in public, with open feedback and meaningful community contribution. We expect this will be a months-long process, and we appreciate any kind of contribution, no matter how small.
-
-## Contributing
-
-If you’re interested in contributing please see our [contribution guidelines](./CONTRIBUTING.md)!
+We welcome community contributions! If you're interested, please see our [contribution guidelines](./CONTRIBUTING.md).
 
 ## Whitepaper
 
@@ -29,7 +25,7 @@ A more detailed description of Uniswap v4 Core can be found in the draft of the 
 
 Note that pool initialization can happen outside the context of unlocking the PoolManager.
 
-Only the net balances owed to the user (positive) or to the pool (negative) are tracked throughout the duration of an unlock. This is the `delta` field held in the unlock state. Any number of actions can be run on the pools, as long as the deltas accumulated during the unlock reach 0 by the unlock’s release. This unlock and call style architecture gives callers maximum flexibility in integrating with the core code.
+Only the net balances owed to the user (positive) or to the pool (negative) are tracked throughout the duration of an unlock. This is the `delta` field held in the unlock state. Any number of actions can be run on the pools, as long as the deltas accumulated during the unlock reach 0 by the unlock's release. This unlock and call style architecture gives callers maximum flexibility in integrating with the core code.
 
 Additionally, a pool may be initialized with a hook contract, that can implement any of the following callbacks in the lifecycle of pool actions:
 
