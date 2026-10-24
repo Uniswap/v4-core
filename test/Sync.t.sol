@@ -3,23 +3,20 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
-
 import {Deployers} from "./utils/Deployers.sol";
-import {IHooks} from "../src/interfaces/IHooks.sol";
-import {Currency} from "../src/types/Currency.sol";
-import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
-import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
-import {IUnlockCallback} from "../src/interfaces/callback/IUnlockCallback.sol";
-import {PoolKey} from "../src/types/PoolKey.sol";
+import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
 import {ModifyLiquidityParams} from "../src/types/PoolOperation.sol";
-import {ActionsRouter, Actions} from "../src/test/ActionsRouter.sol";
-import {SafeCast} from "../src/libraries/SafeCast.sol";
+import {PoolKey} from "../src/types/PoolKey.sol";
+import {IHooks} from "../src/interfaces/IHooks.sol";
+import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
+import {IUnlockCallback} from "../src/interfaces/callback/IUnlockCallback.sol";
 import {CurrencyReserves} from "../src/libraries/CurrencyReserves.sol";
+import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 import {TransientStateLibrary} from "../src/libraries/TransientStateLibrary.sol";
+import {ActionsRouter, Actions} from "../src/test/ActionsRouter.sol";
 import {NativeERC20} from "../src/test/NativeERC20.sol";
-import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
-import {CurrencyLibrary} from "../src/types/Currency.sol";
+import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 
 contract SyncTest is Test, Deployers {
     using StateLibrary for IPoolManager;

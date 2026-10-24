@@ -2,24 +2,23 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
+import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
+import {Constants} from "./utils/Constants.sol";
 import {Deployers} from "./utils/Deployers.sol";
+import {JavascriptFfi} from "./utils/JavascriptFfi.sol";
+import {Logger} from "./utils/Logger.sol";
+import {BalanceDelta, toBalanceDelta} from "src/types/BalanceDelta.sol";
+import {Currency} from "src/types/Currency.sol";
+import {PoolId} from "src/types/PoolId.sol";
 import {PoolKey} from "src/types/PoolKey.sol";
 import {ModifyLiquidityParams} from "src/types/PoolOperation.sol";
-import {IPoolManager} from "src/interfaces/IPoolManager.sol";
 import {IHooks} from "src/interfaces/IHooks.sol";
+import {IPoolManager} from "src/interfaces/IPoolManager.sol";
 import {Position} from "src/libraries/Position.sol";
-import {PoolId} from "src/types/PoolId.sol";
-import {PoolModifyLiquidityTest} from "../src/test/PoolModifyLiquidityTest.sol";
-import {Constants} from "./utils/Constants.sol";
-import {Currency} from "src/types/Currency.sol";
-import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {StateLibrary} from "src/libraries/StateLibrary.sol";
-import {JavascriptFfi} from "./utils/JavascriptFfi.sol";
-import {BalanceDelta} from "../src/types/BalanceDelta.sol";
-import {Fuzzers} from "../src/test/Fuzzers.sol";
 import {TickMath} from "src/libraries/TickMath.sol";
-import {toBalanceDelta} from "src/types/BalanceDelta.sol";
-import {Logger} from "./utils/Logger.sol";
+import {Fuzzers} from "../src/test/Fuzzers.sol";
+import {PoolModifyLiquidityTest} from "../src/test/PoolModifyLiquidityTest.sol";
 
 contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers {
     using StateLibrary for IPoolManager;
