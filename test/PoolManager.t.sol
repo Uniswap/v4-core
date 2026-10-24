@@ -617,6 +617,44 @@ contract PoolManagerTest is Test, Deployers {
         swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
     }
 
+    function test_swap_withERC6909Settings(bool takeClaims, bool settleUsingBurn) public {
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({takeClaims: takeClaims, settleUsingBurn: settleUsingBurn});
+
+        if (settleUsingBurn) {
+            claimsRouter.deposit(currency0, address(this), uint256(-SWAP_PARAMS.amountSpecified));
+            manager.setOperator(address(swapRouter), true);
+        }
+
+        uint256 currency0BalanceBefore = currency0.balanceOfSelf();
+        uint256 currency1BalanceBefore = currency1.balanceOfSelf();
+        uint256 currency0ClaimsBefore = manager.balanceOf(address(this), currency0.toId());
+        uint256 currency1ClaimsBefore = manager.balanceOf(address(this), currency1.toId());
+
+        BalanceDelta delta = swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
+        assertTrue(delta.amount0() < 0);
+        assertTrue(delta.amount1() > 0);
+
+        uint256 inputAmount = uint256(uint128(-delta.amount0()));
+        uint256 outputAmount = uint256(uint128(delta.amount1()));
+
+        if (settleUsingBurn) {
+            assertEq(manager.balanceOf(address(this), currency0.toId()), currency0ClaimsBefore - inputAmount);
+            assertEq(currency0.balanceOfSelf(), currency0BalanceBefore);
+        } else {
+            assertEq(manager.balanceOf(address(this), currency0.toId()), currency0ClaimsBefore);
+            assertEq(currency0.balanceOfSelf(), currency0BalanceBefore - inputAmount);
+        }
+
+        if (takeClaims) {
+            assertEq(manager.balanceOf(address(this), currency1.toId()), currency1ClaimsBefore + outputAmount);
+            assertEq(currency1.balanceOfSelf(), currency1BalanceBefore);
+        } else {
+            assertEq(manager.balanceOf(address(this), currency1.toId()), currency1ClaimsBefore);
+            assertEq(currency1.balanceOfSelf(), currency1BalanceBefore + outputAmount);
+        }
+    }
+
     function test_swap_gas() public {
         swapRouterNoChecks.swap(key, SWAP_PARAMS);
         vm.snapshotGasLastCall("simple swap");
