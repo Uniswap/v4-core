@@ -174,11 +174,12 @@ library StateLibrary {
     }
 
     /**
-     * @notice Retrieves total the liquidity of a pool.
-     * @dev Corresponds to pools[poolId].liquidity
+     * @notice Retrieves the active liquidity of a pool (i.e. liquidity in range of the current tick).
+     * @dev Corresponds to pools[poolId].liquidity. This is NOT the total liquidity across all ticks;
+     * it only reflects liquidity that is currently active at the pool's current tick.
      * @param manager The pool manager contract.
      * @param poolId The ID of the pool.
-     * @return liquidity The liquidity of the pool.
+     * @return liquidity The active liquidity of the pool.
      */
     function getLiquidity(IPoolManager manager, PoolId poolId) internal view returns (uint128 liquidity) {
         // slot key of Pool.State value: `pools[poolId]`
