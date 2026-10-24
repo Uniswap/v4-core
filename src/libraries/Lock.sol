@@ -2,7 +2,8 @@
 pragma solidity ^0.8.24;
 
 /// @notice This is a temporary library that allows us to use transient storage (tstore/tload)
-/// TODO: This library can be deleted when we have the transient keyword support in solidity.
+/// @dev TODO: This library can be deleted when the `transient` keyword is fully supported and stabilized in Solidity.
+/// Currently, assembly is used to access the `tstore` and `tload` opcodes directly for gas efficiency and availability.
 library Lock {
     // The slot holding the unlocked state, transiently. bytes32(uint256(keccak256("Unlocked")) - 1)
     bytes32 internal constant IS_UNLOCKED_SLOT = 0xc090fc4683624cfc3884e9d8de5eca132f2d0ec062aff75d43c0465d5ceeab23;
