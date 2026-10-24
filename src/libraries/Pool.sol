@@ -463,18 +463,18 @@ library Pool {
     }
 
     /// @notice Donates the given amount of currency0 and currency1 to the pool
-    function donate(State storage state, uint256 amount0, uint256 amount1) internal returns (BalanceDelta delta) {
-        uint128 liquidity = state.liquidity;
+    function donate(State storage self, uint256 amount0, uint256 amount1) internal returns (BalanceDelta delta) {
+        uint128 liquidity = self.liquidity;
         if (liquidity == 0) NoLiquidityToReceiveFees.selector.revertWith();
         unchecked {
             // negation safe as amount0 and amount1 are always positive
             delta = toBalanceDelta(-(amount0.toInt128()), -(amount1.toInt128()));
             // FullMath.mulDiv is unnecessary because the numerator is bounded by type(int128).max * Q128, which is less than type(uint256).max
             if (amount0 > 0) {
-                state.feeGrowthGlobal0X128 += UnsafeMath.simpleMulDiv(amount0, FixedPoint128.Q128, liquidity);
+                self.feeGrowthGlobal0X128 += UnsafeMath.simpleMulDiv(amount0, FixedPoint128.Q128, liquidity);
             }
             if (amount1 > 0) {
-                state.feeGrowthGlobal1X128 += UnsafeMath.simpleMulDiv(amount1, FixedPoint128.Q128, liquidity);
+                self.feeGrowthGlobal1X128 += UnsafeMath.simpleMulDiv(amount1, FixedPoint128.Q128, liquidity);
             }
         }
     }
