@@ -336,6 +336,14 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
+    function burn(address from, address recipient, uint256 id, uint256 amount) external onlyWhenUnlocked {
+        Currency currency = CurrencyLibrary.fromId(id);
+        recipient = recipient == address(0) ? msg.sender : recipient;
+        _accountDelta(currency, amount.toInt128(), recipient);
+        _burnFrom(from, currency.toId(), amount);
+    }
+
+    /// @inheritdoc IPoolManager
     function updateDynamicLPFee(PoolKey memory key, uint24 newDynamicLPFee) external {
         if (!key.fee.isDynamicFee() || msg.sender != address(key.hooks)) {
             UnauthorizedDynamicLPFeeUpdate.selector.revertWith();
