@@ -1,0 +1,19 @@
+diff --git a/src/Exttload.sol b/src/Exttload.sol
+index ad24b75a..8e7ca866 100644
+--- a/src/Exttload.sol
++++ b/src/Exttload.sol
+@@ -7,10 +7,11 @@ import {IExttload} from "./interfaces/IExttload.sol";
+ /// https://eips.ethereum.org/EIPS/eip-2330#rationale
+ abstract contract Exttload is IExttload {
+     /// @inheritdoc IExttload
+-    function exttload(bytes32 slot) external view returns (bytes32) {
++    function exttload(bytes32 slot) external view returns (bytes32 value) {
+         assembly ("memory-safe") {
+-            mstore(0, tload(slot))
+-            return(0, 0x20)
++            value := tload(slot)
++            //mstore(0, tload(slot))
++            //return(0, 0x20)
+         }
+     }
+ 

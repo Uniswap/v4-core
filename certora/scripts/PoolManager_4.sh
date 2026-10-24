@@ -1,0 +1,21 @@
+#!/bin/bash
+certoraRun certora/confs/PoolManager.conf \
+    --exclude_rule netLiquidityImmutableInSwap \
+    --exclude_rule nonZeroCorrect \
+    --exclude_rule nonZeroCounterStepInvariant \
+    --exclude_rule nonZeroMonotonousInvariant \
+    --exclude_rule nonZeroStart \
+    --exclude_rule isLockedAndDeltaZero \
+    --exclude_rule poolSqrtPriceNeverTurnsZero \
+    --exclude_rule swapCantIncreaseBothCurrencies \
+    --exclude_rule lockSanityCheck \
+    --exclude_rule swapPriceChangeWitness \
+    --exclude_rule swapTokensCurrencyDeltaChangeWitness \
+    --exclude_rule unlockTokensBalanceChangeWitness \
+    --exclude_rule modifyLiquidityDoesntAffectOthers \
+    --exclude_rule liquidityChangedByOwnerOnly \
+    --exclude_rule initializationSetsPriceCorrectly \
+    --exclude_rule canBeCalledIfLocked \
+    --exclude_rule modifyLiquidityDoesntAffectOthers \
+    --exclude_rule ValidSwapFee \
+    --exclude_rule donationDoesntDecreasePositionValue "$@"
