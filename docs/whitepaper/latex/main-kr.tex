@@ -1,0 +1,353 @@
+\documentclass[sigconf,nonacm,prologue,table]{acmart}
+\usepackage{listings, kotex}
+
+%% labels
+%% sections:    "sec"
+%% definitions: "def"
+%% equations:   "eq"
+%% figures:     "fig"
+%% tables:      "tab"
+
+%% packages
+\usepackage{amsmath}
+\usepackage{pgfplots}
+\usepackage{subcaption}
+\usepackage{commath}
+\usepackage[utf8]{inputenc}
+\usetikzlibrary{positioning, arrows.meta, shapes, calc}
+%% \usepackage{tikz}
+
+\pagenumbering{arabic}
+
+%% hide ACM reference
+\settopmatter{printacmref=false}
+
+%% hide copyright
+\renewcommand\footnotetextcopyrightpermission[1]{}
+
+%% \pagestyle{plain}
+\settopmatter{printfolios=true}
+
+\numberwithin{equation}{section}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+\captionsetup[subfigure]{
+    labelfont=bf,
+    textfont=normalfont,
+}
+\renewcommand{\thesubfigure}{\Roman{subfigure}}
+
+\definecolor{rowA}{gray}{0.9}
+\definecolor{rowB}{gray}{0.8}
+
+\newcommand{\rplus}{\mathbb{R}_{\geq 0}}
+\newcommand{\rpos}{\mathbb{R}_{>0}}
+
+\begin{document}
+\title{Uniswap v4 Core}
+\subtitle{August 2024}
+\date{August 2024}
+
+\author{Hayden Adams}
+\affiliation{
+  \institution{}
+  \city{}
+  \country{} 
+}
+\email{hayden@uniswap.org}
+
+\author{Moody Salem}
+\affiliation{
+  \institution{}
+  \city{}
+  \country{} 
+}
+\email{moody.salem@gmail.com}
+
+\author{Noah Zinsmeister}
+\affiliation{
+  \institution{}
+  \city{}
+  \country{} 
+}
+\email{noah@uniswap.org}
+
+\author{Sara Reynolds}
+\affiliation{
+  \institution{}
+  \city{}
+  \country{} 
+}
+\email{sara@uniswap.org}
+
+\author{Austin Adams}
+\affiliation{
+  \institution{}
+  \city{}
+  \country{} 
+}
+\email{me@aada.ms}
+
+\author{Will Pote}
+\affiliation{
+  \institution{}
+  \city{}
+  \country{} 
+}
+\email{willpote@gmail.com}
+
+\author{Mark Toda}
+\affiliation{
+  \institution{}
+  \city{}
+  \country{} 
+}
+\email{mark@uniswap.org}
+
+\author{Alice Henshaw}
+\affiliation{
+  \institution{}
+  \city{}
+  \country{} 
+}
+\email{alice@uniswap.org}
+
+\author{Emily Williams}
+\affiliation{
+  \institution{}
+  \city{}
+  \country{} 
+}
+\email{emily@uniswap.org}
+
+\author{Dan Robinson}
+\affiliation{
+  \institution{}
+  \city{}
+  \country{} 
+}
+\email{dan@paradigm.xyz}
+
+\begin{teaserfigure}
+\caption*{
+    \hspace{\textwidth}
+    }
+\end{teaserfigure}
+
+\renewcommand{\shortauthors}{Adams et al.}
+
+\begin{abstract}
+
+\textsc{Uniswap v4}는 이더리움 가상 머신을 대상으로 구현된 비수탁형 자동화 시장조성자이다. \textsc{Uniswap v4}는 임의의 코드 훅을 통한 커스터마이징이 가능하며, 이를 통해 개발자는 \textsc{Uniswap v3}에서 도입된 집중 유동성 모델에 새로운 동작 방식을 추가할 수 있다. \textsc{Uniswap v4}에서는 누구나 훅을 포함하여 새로운 풀을 생성할 수 있고, 이때 훅은 명시한 방식에 따라 사전에 정해진 풀의 동작들 이전 또는 이후에 실행될 수 있다. 훅은 오라클처럼 기존에 프로토콜에 내장되어 있던 기능들뿐만 아니라, 기존에는 프로토콜의 독립적인 구현을 요구했을 새로운 기능들을 구현하는 데에도 활용할 수 있다. \textsc{Uniswap v4}는 싱글톤 구현, 플래시 어카운팅, 그리고 네이티브 ETH 지원을 통해 향상된 가스 효율성과 개발자 경험 또한 제공한다.
+\end{abstract}
+
+\maketitle
+
+\section{Introduction} \label{sec:introduction}
+\textsc{Uniswap v4}는 이더리움 가상 머신(EVM) 상에서 가치의 효율적인 교환을 촉진하는 자동화된 시장조성자(AMM)이다. 이전 버전의 \textsc{Uniswap Protocol}과 마찬가지로, 사용자의 자산을 직접 보관하지 않고(non-custodial), 배포 이후 코드 변경이 불가하며(non-upgradable), 누구나 제한 없이 사용할 수 있는(permissionless) 특성을 유지한다. \textsc{Uniswap v4}의 핵심은 개발자를 위한 추가적인 사용자 정의 기능과 가스 효율성 향상을 위한 아키텍처 변화에 있으며, 이는 \textsc{Uniswap v1}과 \textsc{v2}에서 구축된 AMM 모델과 \textsc{Uniswap v3}에서 도입된 집중 유동성(concentrated liquidity) 모델을 기반으로 한다.
+
+\textsc{Uniswap v1} \cite{Adams18} 그리고 \textsc{v2} \cite{Adams20}는 \textsc{Uniswap Protocol}의 첫 두 버전으로, \textsc{v1}은 ERC-20과 ETH 간, \textsc{v2}는 ERC-20 간 교환을 용이하게 하였으며, 두 버전 모두 상수곱 시장조성자(CPMM) 모델을 사용하였다. \textsc{Uniswap v3} \cite{Adams21} 에서 도입된 집중 유동성은 제한된 가격 범위 내에 유동성을 제공하는 포지션과 다양한 수수료 단계를 통해 더 자본 효율적인 유동성 공급을 가능하게 했다.
+
+집중 유동성과 수수료 단계는 유동성 공급자에게 더 높은 유연성을 부여하고 새로운 유동성 공급 전략을 가능하게 했지만, \textsc{Uniswap v3}는 AMM과 DeFi가 진화함에 따라 등장한 새로운 기능들을 지원하기에는 설계적 유연성이 부족했다.
+
+예를 들어, \textsc{Uniswap v2}에서 처음 도입되어 \textsc{v3}에도 포함된 가격 오라클 기능은 통합자가 탈중앙 온체인 가격 데이터를 활용할 수 있도록 하지만, 그 과정에서 스왑 이용자는 더 높은 가스 비용을 감수해야 하며, 통합자는 커스터마이징이 불가능하다는 제약을 받는다. 그 밖의 잠재적 확장 기능으로는 시간가중평균가격주문(TWAP), 시간가중평균시장조성자(TWAMM) \cite{White2021}, 변동성 오라클, 지정가 주문(limit orders), 동적 수수료(dynamic fees) 등이 있다. 이러한 기능들은 코어 프로토콜의 재구현이 필요하며, \textsc{Uniswap v3}에 서드파티 개발자들이 직접 추가할 수도 없었다.
+
+게다가, 이전 버전의 \textsc{Uniswap}에서는 새로운 풀을 배포할 때마다 새로운 컨트랙트를 함께 배포해야 했는데, 이때 비용은 바이트코드 크기에 비례해 증가하였으며, 여러 \textsc{Uniswap} 풀을 경유하는 거래는 여러 컨트랙트 간 전송과 중복된 상태 갱신을 불가피했다. 또한 \textsc{Uniswap v2} 이후로는, 네이티브 ETH를 직접 지원하지 않아, ETH는 반드시 ERC-20 형태로 감싸야 했다. 이러한 설계 결정은 최종 사용자에게 더 높은 가스비 부담을 초래했다.
+
+\textsc{Uniswap v4}는 이러한 비효율성을 다음과 같은 주요 기능들을 통해 개선한다:
+\begin{itemize}
+    \item 훅(\emph{Hooks}): \textsc{Uniswap v4}는 누구나 커스텀 실행 로직을 가진 새로운 집중 유동성 풀을 배포할 수 있도록 한다. 각 풀의 생성자는 “훅 컨트랙트”를 정의할 수 있으며, 이 컨트랙트는 호출 생명주기(call’s lifecycle) 내 특정 시점에 실행될 로직을 구현한다. 이 훅들을 사용하면 풀의 스왑 수수료를 동적으로 관리하거나, 커스텀 곡선을 구현하거나, 커스텀 어카운팅(\emph{Custom Accounting})을 통해 유동성 공급자와 스왑 이용자에게 부과되는 수수료를 조정할 수도 있다.
+    \item 싱글톤(\emph{Singleton}): \textsc{Uniswap v4}는 이전 버전의 팩토리 모델에서 벗어나, 모든 풀을 단일 컨트랙트에서 관리하는 구조를 채택한다. 이러한 싱글톤 모델은 풀 생성과 다중 홉 거래의 비용을 감소시킨다.
+    \item 플래시 어카운팅(\emph{Flash accounting}): 싱글톤은 “플래시 어카운팅” 방식을 사용한다. 이를 통해 호출자는 풀을 일시적으로 잠근 뒤, 그 안의 모든 토큰을 자유롭게 다룰 수 있다. 단, 락이 해제되는 시점에는 호출자와 풀 사이의 모든 토큰 이동이 상쇄되어, 결과적으로 서로 빌리거나 빚진 토큰이 없어야 한다. 이러한 동작 방식은 EIP-1153 \cite{Akhunov2018}에서 제안된 일시적 저장소 명령 코드(transient storage opcodes)를 통해 효율적으로 구현된다. 플래시 어카운팅은 여러 풀을 경유하는 거래의 가스 비용을 한층 더 절감하고, \textsc{Uniswap v4}와의 복잡한 통합을 지원한다.
+    \item 네이티브 ETH 지원(\emph{Native ETH}): \textsc{Uniswap v4}가 네이티브 ETH에 대한 지원을 다시 도입하면서, \textsc{v4} 풀에서 네이티브 토큰과의 페어 구성도 가능해졌다.
+ETH 스왑 이용자와 유동성 공급자는, 전송 비용이 저렴해지고 추가 래핑 비용이 사라져 가스비가 절감되는 이점을 얻는다.
+   \item 커스텀 어카운팅(\emph{Custom Accounting}): 훅이 반환한 델타(delta) 값들을 통해 싱글톤은 네이티브 집중 유동성 풀에 기능을 더하거나 우회할 수 있으며, 동시에 연결된 풀들의 불변 정산 레이어로 동작하게 된다. 이러한 기능은 훅을 이용한 출금 수수료 부과, 자산 래핑, 그리고 \textsc{Uniswap v2}에서 사용된 상수 곱 자동시장조성자(CPMM) 곡선 등 다양한 활용 사례를 지원한다.
+\end{itemize}
+
+본문에서는 이러한 변경사항들과, 이를 가능하게 한 아키텍처적 변화들에 대해 자세히 다룬다.
+
+\section{Hooks} 
+\label{sec:Hooks}
+
+\emph{Hooks}은 풀과 별도로 외부에 배포되어, 풀의 실행 과정 중 특정 시점에 개발자가 정의한 로직을 실행하는 컨트랙트이다. 이러한 훅을 통해 통합자는 유연하고 사용자 정의 가능한 실행 방식을 가진 집중 유동성 풀을 생성할 수 있다. 선택적으로, 훅은 스왑의 동작 방식을 변경할 수 있는 커스텀 델타도 반환할 수 있다. 이에 대한 자세한 내용은 \emph{Custom Accounting} 섹션에서 다룬다 (\ref{customaccounting}).
+
+훅은 풀의 파라미터를 변경하거나, 새로운 기능 및 동작을 추가할 수 있다. 훅을 활용하여 구현할 수 있는 기능의 예시는 다음과 같다:
+\begin{itemize}
+\item TWAMM을 활용한 대규모 주문의 시간 분할 실행 \cite{White2021}
+\item 온체인 지정가 주문 (틱 가격 단위로 체결)
+\item 변동성 기반의 동적 수수료
+\item 유동성 공급자를 위한 MEV 내부화 메커니즘 \cite{adams2024amm}
+\item 중앙값, 절삭값 등 사용자 정의 오라클 구현
+\item 상수곱 시장조성자 (CPMM, \textsc{Uniswap v2} 동작)
+\end{itemize}
+
+\begin{figure*}[ht!]
+    \centering
+    \scalebox{.7225}{
+    \begin{tikzpicture}[
+            every node/.style = {inner sep = 2ex},
+            flow/.style = {thick, arrows = {-To[scale=2]}},
+            decision/.style = {
+                draw,
+                rectangle split,
+                rectangle split horizontal,
+                rectangle split parts = 2,
+                rectangle split draw splits = false,
+                align = left,
+                rounded corners = 3ex
+            },
+            block/.style = {
+                draw,
+                rectangle split,
+                rectangle split horizontal,
+                rectangle split parts = 2,
+                rectangle split draw splits = false,
+                align = left
+            },
+            universal/.style = {draw, diamond, inner sep = .5ex},
+        ]
+
+        \node (start) [universal] at (0,0) {Start swap};
+
+        \node [decision, below=3em of start] (S0) {
+            S0.
+            \nodepart{two}
+            Check beforeSwap flag
+        };
+
+        \node (H1) [block, right=4em of S0] {
+            H1.
+            \nodepart{two}
+            Run beforeSwap Hook
+        };
+
+        \node [block, below=3em of S0] (S1) {
+            S1.
+            \nodepart{two}
+            Execute swap
+        };
+
+        \node (S2) [decision, below=3em of S1] {
+            S2.
+            \nodepart{two}
+            Check afterSwap flag
+        };
+
+        \node (H2) [block, right=4em of S2] {
+            H2.
+            \nodepart{two}
+            Run afterSwap Hook
+        };
+
+        \node (stop) [universal, below=3em of S2] {
+            End swap
+        };
+
+        \draw [flow] (start) -- (S0);
+        \draw [flow] (S0) -- node[midway, above] {True} (H1);
+        \draw [flow] (S0) -- node[midway, right] {False} (S1);
+        \draw [flow] (H1) .. controls + (0,-2) .. node[near end, above] {Return} (S1);
+        \draw [flow] (S1) -- (S2);
+        \draw [flow] (S2) -- node[midway, above] {True} (H2);
+        \draw [flow] (S2) -- node[midway, right] {False} (stop);
+        \draw [flow] (H2) .. controls + (0,-2.5) .. node[near end, above] {Return} (stop);
+    \end{tikzpicture}
+    }
+    \caption{Swap Hook Flow}
+    \label{fig:swapflow}
+\end{figure*}
+
+\subsection{Action Hooks} 
+\label{actionhooks}
+
+\textsc{Uniswap v4}에서 풀이 생성될 때, 생성자는 훅 컨트랙트를 지정할 수 있다. 이 훅 컨트랙트는 풀의 실행 과정 중 호출되는 사용자 정의 로직을 구현한다.
+현재 \textsc{Uniswap v4}는 다음과 같은 10개의 훅 콜백을 지원한다:
+
+\begin{itemize}
+\item beforeInitialize/afterInitialize
+\item beforeAddLiquidity/afterAddLiquidity\footnote{beforeAddLiquidity와 beforeRemoveLiquidity에 대해 별도의 권한을 설정한 이유는, 두 동작이 가진 보안 가정의 차이를 반영하기 위해서이다. 유동성 발급(minting)에는 영향을 줄 수 있지만 소각(burning)에는 영향을 주지 않는 훅은, 유동성 공급자가 자신의 자산을 안전하게 인출할 수 있다는 점에서 더 안전하다.}
+\item beforeRemoveLiquidity/afterRemoveLiquidity
+\item beforeSwap/afterSwap
+\item beforeDonate/afterDonate
+\end{itemize}
+
+훅 컨트랙트의 주소는 어떤 훅 콜백이 실행될지를 결정한다. 이 구조는 실행할 콜백을 선택하는 과정을 가스 효율적이면서도 명확하게 만들며, 업그레이드 가능한 훅이라 하더라도 특정 불변 조건을 반드시 준수하도록 보장한다. 작동 가능한 훅을 구현하기 위한 요구사항은 최소한으로만 존재한다. Figure \ref{fig:swapflow}에서는 beforeSwap과 afterSwap 훅이 스왑 실행 흐름 안에서 어떻게 작동하는지를 설명한다.
+
+
+\subsection{Hook-managed fees} \label{hookfees}
+
+\textsc{Uniswap v4}에서는 스왑 과정에서 발생하는 수수료를 훅이 징수하도록 설정할 수 있다.
+
+스왑 수수료는 고정적으로, 또는 훅 컨트랙트를 통해 동적으로 관리될 수 있다. 또한 훅 컨트랙트는 스왑 수수료의 일부가 자신에게 귀속되도록 설정할 수도 있다. 그렇게 훅 컨트랙트에 누적된 수수료는 그 코드 로직에 따라 유동성 공급자, 스왑 참여자, 훅 작성자 등 임의의 주체에게 분배되도록 설계할 수 있다.
+
+훅의 기능은 풀 생성 시 지정되는 불변 플래그에 의해 제한된다. 예를 들어, 풀 생성자는 해당 풀이 고정 수수료를 가질지 (또 수수료율은 얼마인지), 또는 동적 수수료를 가질지를 선택할 수 있다.
+
+거버넌스 또한 스왑 수수료 중 일정 상한선 내의 비율만큼 가져갈 수 있으며, 이는 거버넌스 절에서 후술한다 (\ref{gov}).
+
+\section{Singleton and Flash Accounting} \label{flashaccounting}
+
+이전 버전들의 \textsc{Uniswap Protocol}은 팩토리/풀 패턴을 사용하였으며, 이 패턴에서 팩토리 컨트랙트는 새로운 토큰 쌍마다 별도의 컨트랙트를 생성하였다. \textsc{Uniswap v4}는 모든 풀을 단일 컨트랙트에서 관리하는 \emph{singleton} 디자인 패턴을 채택하였으며, 이를 통해 풀 배포 비용을 약 99\% 절감할 수 있다.
+
+싱글톤 디자인은 \textsc{v4}의 또 다른 아키텍처 변화인 \emph{flash accounting}을 보완한다. 이전 버전들의 \textsc{Uniswap Protocol}은 대부분의 연산(예: 스왑이나 풀에 유동성 추가)이 토큰 전송으로 마무리되었다. \textsc{v4}에서는 각 연산이 \verb|delta|라 불리는 내부 순잔액(an internal net balance)을 갱신하고, 외부 전송은 락이 해제되는 시점에 한 번만 수행된다. 새롭게 도입된 \verb|take()| 및 \verb|settle()| 함수는 각각 풀에서 자금을 빌리거나(borrow) 풀에 자금을 넣는(deposit) 데 사용된다. 호출이 종료될 때 풀 관리자나 호출자에게 어떠한 토큰도 미지불 상태로 남지 않도록 요구함으로써, 풀의 지급 능력(solvency)이 보장된다.
+
+플래시 어카운팅은 원자적 스왑이나 유동성 추가와 같은 복잡한 풀 연산을 단순화한다. 이 구조가 싱글톤 모델과 결합되면서, 다중 홉 거래나 스왑 후 유동성을 추가하는 식의 복합 연산도 한층 간결해진다.
+
+Cancun 하드포크 이전에는 플래시 어카운팅 아키텍처의 비용이 높았는데, 이는 잔고를 변경할 때마다 스토리지를 갱신해야 했기 때문이다. 내부 정산 데이터가 실제로 스토리지에 기록되지 않도록 컨트랙트에서 보장했음에도, 스토리지 환불 한도(storage refund cap)를 초과하면 사용자는 여전히 동일한 비용을 지불해야 했다 \cite{Buterin2021}. 그러나 트랜잭션 종료 시 모든 잔액이 0이어야 한다는 조건 덕분에, 이러한 잔액 관리는 EIP-1153 \cite{Akhunov2018}에서 정의한 일시적 저장소를 활용해 구현할 수 있다.
+
+싱글톤과 플래시 어카운팅을 함께 활용하면 여러 \textsc{v4} 풀 간의 라우팅 효율이 향상되고, 그 결과 유동성 파편화(liquidity fragmentation)로 인한 비용이 줄어든다. 훅이 도입되어 풀의 수가 크게 증가하면, 이러한 구조는 특히 유용하다.
+
+\section{Native ETH} 
+\label{nativeeth}
+
+\textsc{Uniswap v4}는 거래 페어에 네이티브 ETH를 다시 도입한다. \textsc{Uniswap v1}에서는 엄격하게 ETH와 ERC-20 토큰의 구성으로만 페어를 이루었는데, \textsc{Uniswap v2}에서는 구현 복잡성과 WETH와 ETH 페어 간 유동성 파편화 우려 때문에 네이티브 ETH 페어가 제거되었다. 그러나 싱글톤과 플래시 어카운팅이 이러한 문제를 완화하므로, \textsc{Uniswap v4}에서는 WETH와 ETH 페어 모두 지원한다.
+
+네이티브 ETH 전송의 가스 비용은 ERC-20 전송 대비 약 절반 수준이다(ETH 2.1만 가스, ERC-20 약 4만 가스). 현재 \textsc{Uniswap v2}와 \textsc{v3}에서는 대부분의 사용자가 거래 전후로 ETH와 WETH 간 래핑 혹은 언래핑해야 하므로 추가 가스 비용이 발생한다. 트랜잭션 데이터에 따르면, 대부분의 사용자는 거래를 ETH로 시작하거나 종료하므로 이러한 불필요한 복잡성이 추가된다.
+
+\section{Custom Accounting} 
+\label{customaccounting}
+
+\textsc{Uniswap v4}에서 새롭게 도입된 기능은 커스텀 어카운팅이다. 이는 훅 개발자가 훅에서 반환된 델타 값, 즉 사용자의 계정에서 차감/적립되고 훅에는 적립/차감되는 토큰 양을 활용하여 최종 사용자 행동을 수정할 수 있도록 허용한다. 이를 통해 훅 개발자는 LP 포지션에 대한 출금 수수료를 추가하거나, LP 수수료 모델을 커스텀하거나, 또는 특정 플로우에 맞춰 동작하도록 할 수 있으며, 이들 모두 궁극적으로 \textsc{Uniswap v4} 고유의 내부 집중 유동성을 활용하게 된다.
+
+중요한 점은 훅 개발자는 집중 유동성 모델을 완전히 배제하고, v4 스왑 파라미터를 기반으로 자신만의 커스텀 곡선을 생성할 수도 있다는 것이다. 이는 통합자(integrator)에게 인터페이스 조합 가능성(interface composability)을 제공하여, 훅이 스왑 파라미터를 내부 로직에 매핑할 수 있게 한다.
+
+\textsc{Uniswap v3}에서는 사용자가 해당 버전에서 도입된 집중 유동성 AMM을 반드시 사용해야 했다. 도입 이후로 집중 유동성 AMM은 DeFi 시장에서 근간이 되는 유동성 제공 전략으로 자리잡았다. 집중 유동성은 대부분의 유동성 제공 전략을 유연하게 지원하지만, 어떤 전략들은 구현하려면 더 많은 가스 오버헤드가 필요할 수 있다.
+
+예를 들어, \textsc{Uniswap v4} 훅 안에서 \textsc{Uniswap v2} 방식을 그대로 구현하는 전략을 생각해볼 수 있다. 이 전략은 \textsc{v4}의 내부 집중 유동성 모델을 완전히 우회하고, 훅 내부에 상수 곱 시장조성자(CPMM)를 직접 운용한다. 다만, 같은 효과를 내는 전략이라면 집중 유동성 수학 모델을 사용하는 것보다 커스텀 어카운팅을 활용하는 편이 훨씬 효율적이다.
+
+커스텀 AMM을 직접 구현하는 것과 비교하면, 커스텀 어카운팅이 개발자에게 주는 이점은 \textsc{singleton}, \textsc{flash accounting}, 그리고 \textsc{ERC-6909}이다. 이 기능들은 다중 홉 스왑의 비용을 줄이고, 보안을 강화하며, 플로우 통합을 한층 더 쉽게 만들어준다. 또한 개발자들은 그들이 구축하는 AMM이 충분히 감사된(well-audited) 코드베이스를 기반으로 한다는 이점도 누릴 수 있다.
+
+커스텀 어카운팅을 사용하면 유동성 제공 전략에 대한 실험도 가능하다. 과거에는 이러한 실험을 위해 완전히 새로운 AMM을 생성해야 했으며, 새로운 AMM 개발에는 상당한 기술적 자원과 투자 비용이 들어 대부분 경제적으로 실현하기 어려웠다.
+
+\section{Other Notable Features} 
+\label{other}
+
+\subsection{ERC-6909 Accounting} 
+추가 토큰 회계를 위해 \textsc{Uniswap v4}는 ERC-6909 명세에 따라 싱글톤 방식으로 구현된 ERC-6909 토큰의 민팅과 버닝을 지원한다 \cite{riley2023}. 사용자는 이제 토큰을 싱글톤 내에 보관하고, 컨트랙트와의 ERC-20 전송을 피할 수 있다. 이는 여러 블록이나 트랜잭션에 걸쳐 동일한 토큰을 지속적으로 사용하는 사용자와 훅, 예를 들어 자주 스왑하는 사용자, 유동성 제공자, 또는 커스텀 어카운팅 훅에 특히 유용하다.
+
+
+\subsection{Governance updates} \label{gov}
+\textsc{Uniswap v3}와 유사하게, \textsc{Uniswap v4}는 특정 풀의 스왑 수수료 중 일정 상한 비율까지 거버넌스가 가져갈 수 있도록 허용하며, 이 수수료는 LP 수수료에 추가된다. 반면 \textsc{Uniswap v3}와는 달리 거버넌스는 허용 가능한 수수료 단계나 틱 간격을 제어하지 않는다.
+
+\subsection{Gas reductions}
+앞서도 다루었듯이, \textsc{Uniswap v4}는 플래시 어카운팅, 싱글톤 모델, 네이티브 ETH 지원을 통해 의미 있는 가스 최적화를 도입한다. 또한 훅의 도입으로 인해 \textsc{Uniswap v2}와 \textsc{v3}에 프로토콜 수준에서 고정적으로 포함되어 있던 가격 오라클이 필요 없어졌으며, 이는 곧 기본 풀에서도 오라클을 완전히 생략함으로써 각 블록에서 풀의 첫 스왑 시 약 15,000가스를 절약하게 된다는 의미이기도 하다.
+
+\subsection{donate()}
+\verb|donate()|는 사용자, 통합자, 그리고 훅으로 하여금 풀의 토큰 중 하나 또는 두 종류 모두로 구간(in-range) 유동성 제공자에게 직접 지불할 수 있게 한다. 이 기능은 효율적인 지불을 용이하게 하기 위해 수수료 어카운팅 시스템에 의존한다. 수수료 지불 시스템은 풀의 토큰 페어 중 한 가지 토큰만 지원할 수 있다. 잠재적 활용 사례로는 TWAMM 주문에서 구간 유동성 제공자에게 팁을 주거나, 새로운 유형의 수수료 시스템 구현 등이 있다.
+
+\section{Summary}
+요약하면, \textsc{Uniswap v4}는 사용자의 자산을 직접 보관하지 않고(non-custodial), 배포 이후 코드 변경이 불가하며(non-upgradable), 누구나 제한 없이 사용할 수 있는(permissionless) AMM 프로토콜이다. 이 프로토콜은 \textsc{Uniswap v3}에서 도입된 집중 유동성 모델을 기반으로, 훅을 통해 사용자 정의 가능한 풀을 지원한다. 훅과 더불어 도입된 주요 아키텍처 변화로는, 모든 풀의 상태를 하나의 컨트랙트에 저장하는 싱글톤 컨트랙트와, 각 풀의 지급 능력을 효율적으로 보장하는 플래시 어카운팅이 있다. 또한, 훅 개발자는 집중 유동성 모델을 완전히 우회하여, \textsc{v4} 싱글톤을 임의의 델타 해결자(delta resolver)로 활용할 수도 있다. 그 밖의 개선 사항으로는 네이티브 ETH 지원, ERC-6909 기반 잔액 어카운팅, 새로운 수수료 메커니즘, 그리고 구간 유동성 공급자에게 기부할 수 있는 기능 등이 있다.
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{main}
+
+\section*{Disclaimer}
+
+이 문서는 일반적인 정보 제공만을 목적으로 한다. 이 문서는 투자 조언이 아니고, 어떤 투자 자산의 매수나 매도를 권유하거나 추천하는 내용도 아니며, 투자 결정을 내릴 때 그 타당성을 평가하기 위한 자료로 사용되어서는 안 된다. 본 문서는 회계, 법률, 세무 자문이나 투자 권고의 근거로 삼아서는 안 된다. 이 문서에 담긴 내용은 작성자들의 현재 의견을 반영한 것이며, Uniswap Labs, Paradigm 또는 그들의 계열사를 대변하지 않는다. 또한 Uniswap Labs, Paradigm, 그 계열사나 관계된 개인의 의견을 반드시 반영하는 것도 아니다. 여기서 제시된 의견은 업데이트 없이 변경될 수 있다.
+
+\end{document}
+\endinput
