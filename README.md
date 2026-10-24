@@ -77,8 +77,8 @@ To integrate with the contracts, the interfaces are available to use:
 
 ```solidity
 
-import {IPoolManager} from 'v4-core/contracts/interfaces/IPoolManager.sol';
-import {IUnlockCallback} from 'v4-core/contracts/interfaces/callback/IUnlockCallback.sol';
+import {IPoolManager} from 'v4-core/src/interfaces/IPoolManager.sol';
+import {IUnlockCallback} from 'v4-core/src/interfaces/callback/IUnlockCallback.sol';
 
 contract MyContract is IUnlockCallback {
     IPoolManager poolManager;
