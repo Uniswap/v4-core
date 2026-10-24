@@ -1,27 +1,47 @@
+# --- FOUNDRY GLOBAL CONFIGURATION ---
+# This configuration applies to all profiles unless overridden.
+
 [profile.default]
-optimizer_runs = 44444444
-via_ir = true
-ffi = true
-fs_permissions = [{ access = "read-write", path = ".forge-snapshots/"}, { access = "read", path = "./out"}, {access = "read", path = "./test/bin"}]
-solc = "0.8.26"
-evm_version = "cancun"
-gas_limit = "300000000"
-bytecode_hash = "none"
-allow_internal_expect_revert = true
+# Optimization Runs: A practical number often used for production deployment.
+# High values increase compile time but decrease runtime gas costs.
+# The original value (44444444) was excessively high.
+optimizer_runs = 1_000_000 
+via_ir = true                    # Use the new Solidity IR pipeline for better optimization.
+solc = "0.8.26"                  # Specify the exact Solidity compiler version.
+evm_version = "cancun"           # Target the latest Ethereum EVM version (Cancun/Dencun).
+gas_limit = "300000000"          # High gas limit suitable for local testing/forks (Mainnet limit is lower).
+bytecode_hash = "none"           # Reduces gas cost by skipping bytecode metadata hash.
+allow_internal_expect_revert = true # Allows `expectRevert` in internal functions (common for testing).
+
+# SECURITY WARNING: Setting FFI to true is dangerous in production code. 
+# Only enable it for specific testing utilities.
+ffi = false 
+
+# File System Permissions: Required for certain test functionalities (e.g., fuzzing snapshots).
+fs_permissions = [
+    { access = "read-write", path = ".forge-snapshots/"}, 
+    { access = "read", path = "./out"}, 
+    { access = "read", path = "./test/bin"}
+]
+
+# --- FUZZING PROFILES (Default, Pull Request, Continuous Integration) ---
+# Fuzzing configurations for different testing environments.
 
 [profile.default.fuzz]
-runs = 1000
-seed = "0x4444"
+runs = 1_000                     # Default fuzz runs for local development.
+seed = "0x4444"                  # Fixed seed for reproducible local fuzzing.
 
 [profile.pr.fuzz]
-runs = 10000
+runs = 10_000                    # Increased fuzz runs for Pull Request checks.
 
 [profile.ci.fuzz]
-runs = 100000
+runs = 100_000                   # High fuzz runs for thorough Continuous Integration testing.
+
+# --- DEBUG PROFILE ---
+# Configuration optimized for fast compilation and debugging sessions.
 
 [profile.debug]
-via_ir = false
-optimizer_runs = 200
-fuzz.runs = 100
-
-# See more config options https://github.com/foundry-rs/foundry/tree/master/config
+# Disable IR for faster, less optimized compilation.
+via_ir = false                   
+optimizer_runs = 200             # Low optimizer runs for quick compiles.
+fuzz.runs = 100                  # Minimal fuzz runs for rapid testing cycles.
