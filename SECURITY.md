@@ -6,7 +6,7 @@ Bug bounty details can be found in https://uniswap.org/bug-bounty
 
 ## Careers
 
-See our available job openings in https://boards.greenhouse.io/uniswaplabs
+See our available job openings in https://careers.uniswap.org/
 
 ## Security Team Contact Details
 
