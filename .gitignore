@@ -2,8 +2,10 @@
 artifacts/
 cache/
 crytic-export/
+temp_auto_push.bat
 node_modules/
 typechain/
 foundry-out/
-.vscode/
 out/
+.gitignore
+branch_structure.json
