@@ -8,7 +8,6 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {ModifyLiquidityParams} from "../types/PoolOperation.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
-import {Currency} from "../types/Currency.sol";
 import {BaseTestHooks} from "./BaseTestHooks.sol";
 
 /// @notice a hook that takes all of the LP fee revenue

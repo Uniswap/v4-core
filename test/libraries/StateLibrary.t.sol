@@ -3,17 +3,13 @@ pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 import {IHooks} from "../../src/interfaces/IHooks.sol";
-import {Hooks} from "../../src/libraries/Hooks.sol";
 import {TickMath} from "../../src/libraries/TickMath.sol";
-import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
 import {ModifyLiquidityParams} from "../../src/types/PoolOperation.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
 import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
 import {PoolId} from "../../src/types/PoolId.sol";
-import {Currency} from "../../src/types/Currency.sol";
 import {Deployers} from "../utils/Deployers.sol";
 import {FixedPointMathLib} from "solmate/src/utils/FixedPointMathLib.sol";
-import {Pool} from "../../src/libraries/Pool.sol";
 import {TickBitmap} from "../../src/libraries/TickBitmap.sol";
 import {FixedPoint128} from "../../src/libraries/FixedPoint128.sol";
 

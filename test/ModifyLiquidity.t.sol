@@ -7,7 +7,6 @@ import {PoolKey} from "src/types/PoolKey.sol";
 import {ModifyLiquidityParams} from "src/types/PoolOperation.sol";
 import {IPoolManager} from "src/interfaces/IPoolManager.sol";
 import {IHooks} from "src/interfaces/IHooks.sol";
-import {Position} from "src/libraries/Position.sol";
 import {PoolId} from "src/types/PoolId.sol";
 import {PoolModifyLiquidityTest} from "../src/test/PoolModifyLiquidityTest.sol";
 import {Constants} from "./utils/Constants.sol";
@@ -18,7 +17,6 @@ import {JavascriptFfi} from "./utils/JavascriptFfi.sol";
 import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {Fuzzers} from "../src/test/Fuzzers.sol";
 import {TickMath} from "src/libraries/TickMath.sol";
-import {toBalanceDelta} from "src/types/BalanceDelta.sol";
 import {Logger} from "./utils/Logger.sol";
 
 contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers {

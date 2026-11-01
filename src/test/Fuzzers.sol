@@ -4,7 +4,6 @@ pragma solidity ^0.8.24;
 import {Vm} from "forge-std/Vm.sol";
 import {StdUtils} from "forge-std/StdUtils.sol";
 
-import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {ModifyLiquidityParams} from "../types/PoolOperation.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";

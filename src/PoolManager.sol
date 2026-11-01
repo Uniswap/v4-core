@@ -4,7 +4,6 @@ pragma solidity 0.8.26;
 import {Hooks} from "./libraries/Hooks.sol";
 import {Pool} from "./libraries/Pool.sol";
 import {SafeCast} from "./libraries/SafeCast.sol";
-import {Position} from "./libraries/Position.sol";
 import {LPFeeLibrary} from "./libraries/LPFeeLibrary.sol";
 import {Currency, CurrencyLibrary} from "./types/Currency.sol";
 import {PoolKey} from "./types/PoolKey.sol";

@@ -2,7 +2,6 @@
 pragma solidity ^0.8.24;
 
 import {Currency} from "../types/Currency.sol";
-import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {SafeCast} from "../libraries/SafeCast.sol";
