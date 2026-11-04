@@ -792,14 +792,14 @@ contract PoolManagerTest is Test, Deployers {
         (,, slot0ProtocolFee,) = manager.getSlot0(key.toId());
         assertEq(slot0ProtocolFee, protocolFee);
 
-        // Add liquidity - Fees dont accrue for positive liquidity delta.
+        // Add liquidity - Fees don't accrue for positive liquidity delta.
         ModifyLiquidityParams memory params = LIQUIDITY_PARAMS;
         modifyLiquidityRouter.modifyLiquidity(key, params, ZERO_BYTES);
 
         assertEq(manager.protocolFeesAccrued(currency0), 0);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
 
-        // Remove liquidity - Fees dont accrue for negative liquidity delta.
+        // Remove liquidity - Fees don't accrue for negative liquidity delta.
         params.liquidityDelta = -LIQUIDITY_PARAMS.liquidityDelta;
         modifyLiquidityRouter.modifyLiquidity(key, params, ZERO_BYTES);
 
