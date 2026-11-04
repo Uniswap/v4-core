@@ -20,7 +20,7 @@ contract NonzeroDeltaCountTest is Test {
     }
 
     // Reading from right to left. Bit of 0: call increase. Bit of 1: call decrease.
-    // The library allows over over/underflow so we dont check for that here
+    // The library allows overflow/underflow so we don't check for that here
     function test_fuzz_nonzeroDeltaCount(uint256 instructions) public {
         assertEq(NonzeroDeltaCount.read(), 0);
         uint256 expectedCount;
