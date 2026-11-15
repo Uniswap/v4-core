@@ -289,6 +289,10 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     /// @inheritdoc IPoolManager
     function take(Currency currency, address to, uint256 amount) external onlyWhenUnlocked {
+        if (!currency.isAddressZero() && CurrencyReserves.getSyncedCurrency() == currency) {
+            // prevent transfer between the sync and settle balanceOfs (native settle uses msg.value)
+            TakeCurrencySynced.selector.revertWith();
+        }
         unchecked {
             // negation must be safe as amount is not negative
             _accountDelta(currency, -(amount.toInt128()), msg.sender);

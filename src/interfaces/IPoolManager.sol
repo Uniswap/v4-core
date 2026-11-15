@@ -42,8 +42,11 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @notice Thrown when trying to swap amount of 0
     error SwapAmountCannotBeZero();
 
-    ///@notice Thrown when native currency is passed to a non native settlement
+    /// @notice Thrown when native currency is passed to a non native settlement
     error NonzeroNativeValue();
+
+    /// @notice Thrown when taking a synced currency before its settlement is complete
+    error TakeCurrencySynced();
 
     /// @notice Thrown when `clear` is called with an amount that is not exactly equal to the open currency delta.
     error MustClearExactPositiveDelta();
