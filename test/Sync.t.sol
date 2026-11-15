@@ -372,4 +372,74 @@ contract SyncTest is Test, Deployers {
 
         actionsRouter.executeActions(actions, params);
     }
+
+    function test_take_afterSync_underflowAttempt_revertsWithTakeCurrencySynced() public {
+        MockERC20(Currency.unwrap(currency2)).mint(address(manager), 10);
+
+        Actions[] memory actions = new Actions[](4);
+        bytes[] memory params = new bytes[](4);
+
+        actions[0] = Actions.SYNC;
+        params[0] = abi.encode(currency2);
+
+        actions[1] = Actions.TAKE;
+        params[1] = abi.encode(currency2, address(this), int128(2));
+
+        actions[2] = Actions.TRANSFER_FROM;
+        params[2] = abi.encode(currency2, address(this), address(manager), 1);
+
+        actions[3] = Actions.SETTLE;
+
+        vm.expectRevert(IPoolManager.TakeCurrencySynced.selector);
+        actionsRouter.executeActions(actions, params);
+    }
+
+    function test_take_afterSync_underCreditAttempt_revertsWithTakeCurrencySynced() public {
+        MockERC20(Currency.unwrap(currency2)).mint(address(manager), 10);
+
+        Actions[] memory actions = new Actions[](5);
+        bytes[] memory params = new bytes[](5);
+
+        actions[0] = Actions.SYNC;
+        params[0] = abi.encode(currency2);
+
+        actions[1] = Actions.TAKE;
+        params[1] = abi.encode(currency2, address(this), int128(1));
+
+        actions[2] = Actions.TRANSFER_FROM;
+        params[2] = abi.encode(currency2, address(this), address(manager), 1);
+
+        actions[3] = Actions.SETTLE;
+
+        actions[4] = Actions.ASSERT_DELTA_EQUALS;
+        params[4] = abi.encode(currency2, address(actionsRouter), 0);
+
+        vm.expectRevert(IPoolManager.TakeCurrencySynced.selector);
+        actionsRouter.executeActions(actions, params);
+    }
+
+    function test_mint_afterSync_doesNotAffectSettlement() public {
+        MockERC20(Currency.unwrap(currency2)).mint(address(manager), 10);
+
+        Actions[] memory actions = new Actions[](5);
+        bytes[] memory params = new bytes[](5);
+
+        actions[0] = Actions.SYNC;
+        params[0] = abi.encode(currency2);
+
+        actions[1] = Actions.MINT;
+        params[1] = abi.encode(address(this), currency2, uint256(1));
+
+        actions[2] = Actions.TRANSFER_FROM;
+        params[2] = abi.encode(currency2, address(this), address(manager), 1);
+
+        actions[3] = Actions.SETTLE;
+
+        actions[4] = Actions.ASSERT_DELTA_EQUALS;
+        params[4] = abi.encode(currency2, address(actionsRouter), 0);
+
+        actionsRouter.executeActions(actions, params);
+
+        assertEq(manager.balanceOf(address(this), currency2.toId()), 1);
+    }
 }
